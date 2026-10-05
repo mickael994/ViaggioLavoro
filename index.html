@@ -1,0 +1,120 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Turni Auto">
+<link rel="manifest" href="manifest.json">
+<title>Turni Auto</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:16px -apple-system,sans-serif;background:#f2f2f7;padding:env(safe-area-inset-top) 0 90px}
+h1{font-size:22px;margin:14px 16px}h2{font-size:13px;text-transform:uppercase;color:#6e6e73;margin:18px 16px 6px}
+.r{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px 16px;border-bottom:1px solid #e5e5ea}
+.r.t{background:#fff4d6}.r.g .n{color:#c2410c}.r.xx{border-left:4px solid #ff3b30}.d{width:100px;color:#6e6e73;font-size:14px}.n{font-weight:600;flex:1}.nt{font-size:12px;color:#6e6e73;max-width:110px;text-align:right}
+.box{padding:16px}.sm{font-size:13px;color:#6e6e73}input,select,button,textarea{font:inherit;width:100%;padding:12px;margin:6px 0;border:1px solid #c7c7cc;border-radius:10px;background:#fff}
+button{background:#007aff;color:#fff;border:0}button.s{background:#e5e5ea;color:#000}button.x{background:#ff3b30}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #d1d1d6;padding-bottom:env(safe-area-inset-bottom)}
+nav button{background:none;color:#007aff;border:0;border-radius:0;margin:0}dialog{width:92%;border:0;border-radius:14px;padding:16px}
+</style></head><body><div id="app"></div>
+<input type="file" id="imf" accept=".json,application/json" style="display:none" onchange="imp(this)">
+<nav id="nav" style="display:none"><button onclick="show('c')">Calendario</button><button onclick="show('s')">Statistiche</button><button onclick="show('i')">Impostazioni</button></nav>
+<dialog id="dlg"></dialog>
+<script>
+const KEY='turniAuto2',N=250,$=id=>document.getElementById(id);
+let S=JSON.parse(localStorage.getItem(KEY)||'null'),tab='c';
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const dt=s=>new Date(s+'T12:00:00');
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),t=h+l-7*m+114;return new Date(y,Math.floor(t/31)-1,(t%31)+1,12)}
+function isOff(d){const w=d.getDay();if(w==0||w==6)return true;
+ if(['1-1','6-1','25-4','1-5','2-6','15-8','1-11','8-12','25-12','26-12'].includes(d.getDate()+'-'+(d.getMonth()+1)))return true;
+ const p=easter(d.getFullYear());p.setDate(p.getDate()+1);return iso(p)==iso(d)}
+const isWork=d=>!isOff(d)||S.x.includes(iso(d));
+function nextDay(d){do{d.setDate(d.getDate()+1)}while(!isWork(d));return d}
+function dates(){const r=[S.base];let d=dt(S.base);while(r.length<S.q.length){d=nextDay(d);r.push(iso(d))}return r.slice(0,S.q.length)}
+function lastReg(p){for(let j=p-1;j>=0;j--)if(!S.q[j].g&&S.names.includes(S.q[j].n))return S.names.indexOf(S.q[j].n);return S.li}
+function fill(){let i=lastReg(S.q.length);while(S.q.length<N){i=(i+1)%S.names.length;S.q.push({n:S.names[i],g:0})}}
+function reflow(p){let i=lastReg(p);for(let j=p;j<S.q.length;j++)if(!S.q[j].g){i=(i+1)%S.names.length;S.q[j].n=S.names[i]}}
+function prune(){const t=iso(new Date());let ds=dates();
+ while(ds.length&&ds[0]<t){const x=S.q.shift();ds.shift();const k=x.g?'Ospiti':x.n;S.tot[k]=(S.tot[k]||0)+1;
+  if(!x.g&&S.names.includes(x.n))S.li=S.names.indexOf(x.n)}
+ if(S.q.length)S.base=ds[0];else{const y=new Date();y.setDate(y.getDate()-1);y.setHours(12);S.base=iso(nextDay(y))}
+ S.x=S.x.filter(d=>d>=t);Object.keys(S.notes).forEach(d=>{if(d<t)delete S.notes[d]});
+ fill();save()}
+function drawNames(){const n=+$('cnt').value,old=[...document.querySelectorAll('#nm input')].map(i=>i.value);let h='';
+ for(let i=0;i<n;i++)h+=`<input id="p${i}" placeholder="Guidatore ${i+1}" value="${esc(old[i]||'')}">`;$('nm').innerHTML=h}
+function create(){const n=+$('cnt').value,names=[];
+ for(let i=0;i<n;i++)names.push($('p'+i).value.trim());
+ if(names.some(x=>!x))return alert('Compila il nome di tutti i guidatori');
+ if(new Set(names.map(x=>x.toLowerCase())).size<n)return alert('I nomi devono essere diversi');
+ if(!$('sd').value)return alert('Scegli la data di partenza');
+ S={names,li:-1,tot:{},since:$('sd').value,x:[],notes:{},q:[{n:names[0],g:0}],base:$('sd').value,lb:null};
+ const y=dt($('sd').value);y.setDate(y.getDate()-1);S.base=iso(nextDay(y));
+ fill();save();render()}
+async function exp(){S.lb=iso(new Date());save();
+ const j=JSON.stringify({app:'turni-auto',v:2,data:S}),fn='turni-backup-'+iso(new Date())+'.json';
+ try{const f=new File([j],fn,{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});render();return}}
+ catch(e){if(e.name=='AbortError')return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));
+ a.download=fn;document.body.appendChild(a);a.click();a.remove();render()}
+function imp(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();
+ rd.onload=()=>{try{const o=JSON.parse(rd.result),d=o.data;
+  if(o.app!=='turni-auto'||!d||!Array.isArray(d.names)||!Array.isArray(d.q)||!Array.isArray(d.x)||!d.base||!d.notes||!d.tot)throw 0;
+  if(S&&!confirm('Sostituire i dati attuali con quelli del backup?'))return;
+  S=d;S.li=S.li??-1;prune();tab='c';render();alert('Backup importato')}
+  catch(e){alert('File di backup non valido')}inp.value=''};rd.readAsText(f)}
+function edit(i){const ds=dates(),d=ds[i],x=S.q[i],ex=S.x.includes(d);
+ $('dlg').innerHTML=`<b>${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}${ex?' (extra)':''}</b>
+ <input id="en" list="nl" value="${esc(x.n)}" placeholder="Chi guida"><datalist id="nl">${S.names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+ <textarea id="et" rows="3" placeholder="Note del giorno">${esc(S.notes[d])}</textarea>
+ <button onclick="sv(${i})">Salva (solo questo giorno)</button>
+ <button class="s" onclick="gi(${i})">Inserisci ospite qui (gli altri slittano)</button>
+ ${ex?`<button class="x" onclick="rx(${i})">Rimuovi giorno extra</button>`:''}
+ ${x.g&&!ex?`<button class="x" onclick="dg(${i})">Rimuovi ospite (ricompatta)</button>`:''}
+ <button class="s" onclick="$('dlg').close()">Annulla</button>`;$('dlg').showModal()}
+function setNote(d){const v=$('et').value.trim();if(v)S.notes[d]=v;else delete S.notes[d]}
+function sv(i){const n=$('en').value.trim();if(!n)return;setNote(dates()[i]);S.q[i]={n,g:S.names.includes(n)?0:1};save();$('dlg').close();render()}
+function gi(i){const n=$('en').value.trim();setNote(dates()[i]);
+ S.q.splice(i,0,{n:(!n||S.names.includes(n))?'Ospite':n,g:1});S.q.pop();save();$('dlg').close();render()}
+function dg(i){S.q.splice(i,1);fill();save();$('dlg').close();render()}
+function rx(i){const ds=dates(),d=ds[i];S.x=S.x.filter(z=>z!=d);const x=S.q.splice(i,1)[0];
+ if(i==0&&ds[1])S.base=ds[1];if(!x.g)reflow(i);fill();save();$('dlg').close();render()}
+function addX(){$('dlg').innerHTML=`<b>Giorno festivo/weekend lavorato</b>
+ <input id="xd" type="date"><input id="xn" list="nl2" placeholder="Chi guida"><datalist id="nl2">${S.names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+ <button onclick="doX()">Aggiungi</button><button class="s" onclick="$('dlg').close()">Annulla</button>`;$('dlg').showModal()}
+function doX(){const d=$('xd').value,n=$('xn').value.trim();if(!d||!n)return;const ds=dates();
+ if(!isOff(dt(d)))return alert('Quel giorno è già lavorativo');
+ if(d<iso(new Date())||d>ds[ds.length-1])return alert('Data fuori dal calendario');
+ if(S.x.includes(d))return alert('Già presente');
+ const p=ds.filter(z=>z<d).length,g=!S.names.includes(n);
+ S.x.push(d);S.q.splice(p,0,{n,g:g?1:0});S.q.pop();if(p==0)S.base=d;if(!g)reflow(p+1);
+ save();$('dlg').close();render()}
+function show(t){tab=t;render()}
+function reset(){if(confirm('Cancellare TUTTO (calendario e statistiche)? Fai prima un backup.')){localStorage.removeItem(KEY);S=null;render()}}
+function render(){const a=$('app');$('nav').style.display=S?'flex':'none';
+ if(!S){a.innerHTML=`<h1>Nuovo calendario</h1><div class="box">Numero di guidatori:
+  <select id="cnt" onchange="drawNames()">${[2,3,4,5].map(n=>`<option value="${n}"${n==4?' selected':''}>${n}</option>`).join('')}</select>
+  <div id="nm"></div>Data di partenza:<input id="sd" type="date"><button onclick="create()">Genera</button>
+  <button class="s" onclick="$('imf').click()">Importa backup</button></div>`;drawNames();return}
+ if(tab=='c'){const t=iso(new Date()),ds=dates();let m='',h='<h1>Calendario</h1><div class="box"><button class="s" onclick="addX()">+ Giorno extra (festivo lavorato)</button></div>';
+  S.q.forEach((x,i)=>{const d=ds[i],mm=dt(d).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+   if(mm!=m){m=mm;h+=`<h2>${mm}</h2>`}
+   const ex=S.x.includes(d);
+   h+=`<div class="r ${d==t?'t':''} ${x.g?'g':''} ${ex?'xx':''}" onclick="edit(${i})"><span class="d">${dt(d).toLocaleDateString('it-IT',{weekday:'short',day:'numeric'})}</span><span class="n">${esc(x.n)}${x.g?' (ospite)':''}${ex?' · extra':''}</span><span class="nt">${esc(S.notes[d])}</span></div>`});
+  a.innerHTML=h}
+ else if(tab=='s'){const fut={};S.q.forEach(x=>{const k=x.g?'Ospiti':x.n;fut[k]=(fut[k]||0)+1});
+  const keys=[...new Set([...S.names,'Ospiti',...Object.keys(S.tot)])];
+  a.innerHTML=`<h1>Statistiche</h1><h2>Giorni già trascorsi dal ${dt(S.since).toLocaleDateString('it-IT')}</h2>`+
+   keys.map(k=>`<div class="r"><span class="n">${esc(k)}</span><span>${S.tot[k]||0}</span></div>`).join('')+
+   `<h2>Prossimi ${S.q.length} giorni in calendario</h2>`+keys.map(k=>`<div class="r"><span class="n">${esc(k)}</span><span>${fut[k]||0}</span></div>`).join('')}
+ else a.innerHTML=`<h1>Impostazioni</h1><div class="box">
+  <div class="sm">Ultimo backup: ${S.lb?dt(S.lb).toLocaleDateString('it-IT'):'mai'}</div>
+  <button onclick="exp()">Esporta backup</button>
+  <button class="s" onclick="$('imf').click()">Importa backup</button>
+  <button class="x" onclick="reset()">Cancella tutto e ricomincia</button></div>`}
+if(S)prune();render();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
