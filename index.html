@@ -28,11 +28,14 @@ body{margin:0;font:16px/1.35 -apple-system,"SF Pro Rounded",system-ui,sans-serif
 .wh{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:inherit;font:inherit;padding:14px 16px;text-align:left;cursor:pointer}
 .wt{flex:1;min-width:0}.wt b{display:block}.wt small{color:var(--mut)}
 .mini{display:flex}.mini .av{--s:24px;margin-left:-6px;border:2px solid var(--card);box-shadow:none}.mini .av:first-child{margin-left:0}
-.wk.open .mini{display:none}
-.chev{width:22px;height:22px;flex:none;color:var(--ac);transition:transform .3s}.wk.open .chev{transform:rotate(180deg)}
-.wb{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}.wk.open .wb{grid-template-rows:1fr}.wi{overflow:hidden}
+.wk.open>.wh .mini{display:none}
+.chev{width:22px;height:22px;flex:none;color:var(--ac);transition:transform .3s}.wk.open>.wh .chev{transform:rotate(180deg)}
+.wb{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}.wk.open>.wb{grid-template-rows:1fr}.wi{overflow:hidden}
+.pg{background:transparent;box-shadow:none;border:2px dashed var(--line)}
+.pgi{padding:0 8px 8px}.pgi .wk{box-shadow:none;border:1px solid var(--line)}
 .dr{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line);cursor:pointer}
 .dr:active{background:var(--line)}.dr.t{background:var(--tod)}
+.dr.pa .dd,.dr.pa .dn>b,.dr.pa .av{opacity:.65}
 .dd{width:42px;text-align:center;flex:none}.dd small{display:block;color:var(--mut);text-transform:uppercase;font-size:11px;font-weight:700}.dd b{font-size:20px}
 .dn{flex:1;min-width:0}.dn b{font-size:17px}
 .bd{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle;color:#fff}
@@ -41,8 +44,8 @@ body{margin:0;font:16px/1.35 -apple-system,"SF Pro Rounded",system-ui,sans-serif
 .card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--sh);margin-bottom:14px}
 .card h3{margin:0 0 10px;font-size:15px}
 .ttl{font-size:clamp(24px,5vw,30px);font-weight:800;margin:calc(env(safe-area-inset-top) + 18px) 4px 14px;letter-spacing:-.4px}
-input,textarea{font:inherit;color:var(--tx);background:var(--bg);width:100%;padding:13px 14px;margin:6px 0;border:2px solid var(--line);border-radius:14px;outline:none}
-input:focus,textarea:focus{border-color:var(--ac)}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--bg);width:100%;padding:13px 14px;margin:6px 0;border:2px solid var(--line);border-radius:14px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
 .b{display:block;width:100%;font:inherit;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--ac),var(--ac2));border:0;border-radius:14px;padding:14px;margin:8px 0;cursor:pointer}
 .b.s{background:var(--line);color:var(--tx)}.b.x{background:#ef4444}.b:active{transform:scale(.98)}
 .sm{font-size:13px;color:var(--mut)}
@@ -86,12 +89,13 @@ dialog::backdrop{background:rgba(10,5,30,.5);backdrop-filter:blur(3px)}
 <nav id="nav" style="display:none"></nav>
 <dialog id="dlg"></dialog>
 <script>
-const KEY='turniAuto2',N=250,PAL=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6'],GC='#64748b',$=id=>document.getElementById(id);
-let S=JSON.parse(localStorage.getItem(KEY)||'null'),tab='c',openW=new Set(),initOpen=0,setupN=4,SV={n:[],c:[]};
+const KEY='turniAuto2',N=250,KEEP=60,PAL=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6'],GC='#64748b',$=id=>document.getElementById(id);
+let S=JSON.parse(localStorage.getItem(KEY)||'null'),tab='c',openW=new Set(),initOpen=0,showPast=false,setupN=4,SV={n:[],c:[]};
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 const pad=n=>String(n).padStart(2,'0');
 const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const dt=s=>new Date(s+'T12:00:00');
+const todayS=()=>iso(new Date());
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ini=n=>((n||'').trim().charAt(0).toUpperCase())||'?';
 const CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -108,13 +112,14 @@ const isWork=d=>!isOff(d)||S.x.includes(iso(d));
 function nextDay(d){do{d.setDate(d.getDate()+1)}while(!isWork(d));return d}
 function dates(){const r=[S.base];let d=dt(S.base);while(r.length<S.q.length){d=nextDay(d);r.push(iso(d))}return r.slice(0,S.q.length)}
 function lastReg(p){for(let j=p-1;j>=0;j--)if(!S.q[j].g&&S.names.includes(S.q[j].n))return S.names.indexOf(S.q[j].n);return S.li}
-function fill(){let i=lastReg(S.q.length);while(S.q.length<N){i=(i+1)%S.names.length;S.q.push({n:S.names[i],g:0})}}
+function fill(){const t=todayS(),pa=S.q.length?dates().filter(d=>d<t).length:0,T=N+pa;let i=lastReg(S.q.length);
+ while(S.q.length<T){i=(i+1)%S.names.length;S.q.push({n:S.names[i],g:0})}}
 function reflow(p){let i=lastReg(p);for(let j=p;j<S.q.length;j++)if(!S.q[j].g){i=(i+1)%S.names.length;S.q[j].n=S.names[i]}}
-function prune(){const t=iso(new Date());let ds=dates();
- while(ds.length&&ds[0]<t){const x=S.q.shift();ds.shift();const k=x.g?'Ospiti':x.n;S.tot[k]=(S.tot[k]||0)+1;
+function prune(){const c=new Date();c.setDate(c.getDate()-KEEP);const cut=iso(c);let ds=dates();
+ while(ds.length&&ds[0]<cut){const x=S.q.shift();ds.shift();const k=x.g?'Ospiti':x.n;S.tot[k]=(S.tot[k]||0)+1;
   if(!x.g&&S.names.includes(x.n))S.li=S.names.indexOf(x.n)}
  if(S.q.length)S.base=ds[0];else{const y=new Date();y.setDate(y.getDate()-1);y.setHours(12);S.base=iso(nextDay(y))}
- S.x=S.x.filter(d=>d>=t);Object.keys(S.notes).forEach(d=>{if(d<t)delete S.notes[d]});
+ S.x=S.x.filter(d=>d>=cut);Object.keys(S.notes).forEach(d=>{if(d<cut)delete S.notes[d]});
  fill();ensure();save()}
 function mon(s){const d=dt(s);d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)}
 function wnum(k){const d=dt(k);d.setDate(d.getDate()+3);const j=new Date(d.getFullYear(),0,4,12);return 1+Math.round(((d-j)/864e5-3+((j.getDay()+6)%7))/7)}
@@ -139,9 +144,9 @@ function create(){grab();const n=setupN,names=[],cols={};
  if(!$('sd').value)return alert('Scegli la data di partenza');
  S={names,li:-1,tot:{},since:$('sd').value,x:[],notes:{},q:[{n:names[0],g:0}],base:$('sd').value,lb:null,colors:cols};
  const y=dt($('sd').value);y.setDate(y.getDate()-1);S.base=iso(nextDay(y));
- ensure();fill();save();initOpen=0;window._sc=0;render()}
-async function exp(){S.lb=iso(new Date());save();
- const j=JSON.stringify({app:'turni-auto',v:2,data:S}),fn='turni-backup-'+iso(new Date())+'.json';
+ ensure();fill();prune();initOpen=0;window._sc=0;render()}
+async function exp(){S.lb=todayS();save();
+ const j=JSON.stringify({app:'turni-auto',v:2,data:S}),fn='turni-backup-'+todayS()+'.json';
  try{const f=new File([j],fn,{type:'application/json'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});render();return}}
  catch(e){if(e.name=='AbortError')return}
@@ -153,14 +158,15 @@ function imp(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();
   if(S&&!confirm('Sostituire i dati attuali con quelli del backup?'))return;
   S=d;S.li=S.li??-1;prune();tab='c';initOpen=0;window._sc=0;render();alert('Backup importato')}
   catch(e){alert('File di backup non valido')}inp.value=''};rd.readAsText(f)}
-function edit(i){const ds=dates(),d=ds[i],x=S.q[i],ex=S.x.includes(d);
- $('dlg').innerHTML=`<div class="hrow" style="justify-content:flex-start;gap:12px">${av(x.n,x.g,48)}<div><b style="font-size:18px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</b>${ex?'<div class="sm">Giorno extra</div>':''}</div></div>
+function edit(i){const ds=dates(),d=ds[i],x=S.q[i],ex=S.x.includes(d),past=d<todayS();
+ $('dlg').innerHTML=`<div class="hrow" style="justify-content:flex-start;gap:12px">${av(x.n,x.g,48)}<div><b style="font-size:18px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</b>${ex?'<div class="sm">Giorno extra</div>':''}${past?'<div class="sm">Giorno passato: puoi correggere chi ha guidato e le note</div>':''}</div></div>
  <input id="en" list="nl" value="${esc(x.n)}" placeholder="Chi guida"><datalist id="nl">${S.names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
  <textarea id="et" rows="3" placeholder="Note del giorno">${esc(S.notes[d])}</textarea>
  <button class="b" onclick="sv(${i})">Salva (solo questo giorno)</button>
- <button class="b s" onclick="gi(${i})">Inserisci ospite qui (gli altri slittano)</button>
+ <button class="b s" onclick="swapUI(${i})">Scambia con un altro giorno</button>
+ ${past?'':`<button class="b s" onclick="gi(${i})">Inserisci ospite qui (gli altri slittano)</button>
  ${ex?`<button class="b x" onclick="rx(${i})">Rimuovi giorno extra</button>`:''}
- ${x.g&&!ex?`<button class="b x" onclick="dg(${i})">Rimuovi ospite (ricompatta)</button>`:''}
+ ${x.g&&!ex?`<button class="b x" onclick="dg(${i})">Rimuovi ospite (ricompatta)</button>`:''}`}
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;$('dlg').showModal()}
 function setNote(d){const v=$('et').value.trim();if(v)S.notes[d]=v;else delete S.notes[d]}
 function sv(i){const n=$('en').value.trim();if(!n)return;setNote(dates()[i]);S.q[i]={n,g:S.names.includes(n)?0:1};save();$('dlg').close();render()}
@@ -174,13 +180,23 @@ function addX(){$('dlg').innerHTML=`<b style="font-size:18px">Giorno festivo/wee
  <button class="b" onclick="doX()">Aggiungi</button><button class="b s" onclick="$('dlg').close()">Annulla</button>`;$('dlg').showModal()}
 function doX(){const d=$('xd').value,n=$('xn').value.trim();if(!d||!n)return;const ds=dates();
  if(!isOff(dt(d)))return alert('Quel giorno è già lavorativo');
- if(d<iso(new Date())||d>ds[ds.length-1])return alert('Data fuori dal calendario');
+ if(d<todayS()||d>ds[ds.length-1])return alert('Data fuori dal calendario');
  if(S.x.includes(d))return alert('Già presente');
  const p=ds.filter(z=>z<d).length,g=!S.names.includes(n);
  S.x.push(d);S.q.splice(p,0,{n,g:g?1:0});S.q.pop();if(p==0)S.base=d;if(!g)reflow(p+1);
  save();$('dlg').close();render()}
 function show(t){tab=t;render();scrollTo(0,0)}
 function tw(k){openW.has(k)?openW.delete(k):openW.add(k);$('w_'+k).classList.toggle('open')}
+function tp(){showPast=!showPast;$('pg').classList.toggle('open')}
+function swapUI(i){const ds=dates(),d=ds[i],lo=Math.max(0,i-15),hi=Math.min(S.q.length-1,i+40);let o='';
+ for(let j=lo;j<=hi;j++){if(j==i)continue;
+  o+=`<option value="${j}"${j==i+1?' selected':''}>${dt(ds[j]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})} · ${esc(S.q[j].n)}</option>`}
+ $('dlg').innerHTML=`<b style="font-size:18px">Scambia turno</b>
+ <div class="sm" style="margin:6px 0 10px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} guida ${esc(S.q[i].n)}. Scegli l'altro giorno: i due guidatori si invertono e il resto del calendario non cambia.</div>
+ <select id="swd">${o}</select>
+ <button class="b" onclick="doSwap(${i})">Scambia</button><button class="b s" onclick="$('dlg').close()">Annulla</button>`}
+function doSwap(i){const j=+$('swd').value;if(isNaN(j)||j==i)return;
+ const a=S.q[i],b=S.q[j];S.q[i]={n:b.n,g:b.g,s:1};S.q[j]={n:a.n,g:a.g,s:1};save();$('dlg').close();render()}
 function setCol(i,v){S.colors[S.names[i]]=v;const e=$('sa'+i);if(e)e.style.background=v;$('ss'+i).style.background=v;save()}
 function reset(){if(confirm('Cancellare TUTTO (calendario e statistiche)? Fai prima un backup.')){localStorage.removeItem(KEY);S=null;render()}}
 function navHtml(){return [['c','Calendario'],['s','Statistiche'],['i','Impostazioni']].map(([k,l])=>`<button class="${tab==k?'on':''}" onclick="show('${k}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>${l}</button>`).join('')}
@@ -199,38 +215,45 @@ function render(){const a=$('app');$('nav').style.display=S?'flex':'none';
    <div class="sm" style="margin-bottom:6px">Scrivi i nomi nell'ordine di guida. Tocca il quadrato colorato per cambiare colore.</div>
    <div id="nm"></div><div class="sm" style="margin-top:14px">Ordine di rotazione</div><div class="ord" id="ord"></div></div>
   <div class="card"><div class="step"><i>3</i><b>Da quando parte?</b></div>
-   <input id="sd" type="date" value="${iso(new Date())}"><div class="sm">Se la data cade in un giorno non lavorativo, si parte dal primo giorno utile.</div></div>
+   <input id="sd" type="date" value="${todayS()}"><div class="sm">Se la data cade in un giorno non lavorativo, si parte dal primo giorno utile.</div></div>
   <button class="b" onclick="create()" style="font-size:17px;padding:16px">Genera calendario</button>
   <button class="b s" onclick="$('imf').click()">Ho già un backup: importalo</button></div>`;drawNames();return}
  $('nav').innerHTML=navHtml();
- if(tab=='c'){const t=iso(new Date()),ds=dates(),ck=mon(t),W=new Map();
+ if(tab=='c'){const t=todayS(),ds=dates(),ck=mon(t),W=new Map();
   ds.forEach((d,i)=>{const k=mon(d);if(!W.has(k))W.set(k,[]);W.get(k).push(i)});
-  if(!initOpen){openW.add(W.has(ck)?ck:[...W.keys()][0]);initOpen=1}
+  const keys=[...W.keys()],pk=keys.filter(k=>k<ck),mk=keys.filter(k=>k>=ck);
+  if(!initOpen){openW.add(W.has(ck)?ck:mk[0]);initOpen=1}
   const ni=ds.findIndex(d=>d>=t),nx=ni>=0?S.q[ni]:null;
-  let h=`<div class="hero"><div class="wrap"><div class="hrow"><h1>Turni Auto</h1><button class="pill" onclick="addX()">+ Giorno extra</button></div>
-  ${nx?`<div class="today">${av(nx.n,nx.g,46)}<div><small>${ds[ni]==t?'Oggi guida':'Prossimo turno · '+dt(ds[ni]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})}</small><b>${esc(nx.n)}</b></div></div>`:''}</div></div><div class="wrap">`;
-  let lm='';
-  W.forEach((idx,k)=>{const first=ds[idx[0]],last=ds[idx[idx.length-1]],mm=dt(first).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-   if(mm!=lm){lm=mm;h+=`<div class="mh">${mm}</div>`}
-   h+=`<section class="wk ${openW.has(k)?'open':''} ${k==ck?'cur':''}" id="w_${k}"><button class="wh" onclick="tw('${k}')">
-    <div class="wt"><b>Settimana ${wnum(k)}${k==ck?' <span class="bd t">ORA</span>':''}</b><small>${range(first,last)}</small></div>
+  const wkHtml=k=>{const idx=W.get(k),first=ds[idx[0]],last=ds[idx[idx.length-1]],nn=idx.filter(i=>S.notes[ds[i]]).length;
+   let h=`<section class="wk ${openW.has(k)?'open':''} ${k==ck?'cur':''}" id="w_${k}"><button class="wh" onclick="tw('${k}')">
+    <div class="wt"><b>Settimana ${wnum(k)}${k==ck?' <span class="bd t">ORA</span>':''}</b><small>${range(first,last)}${nn?' · '+nn+(nn==1?' nota':' note'):''}</small></div>
     <div class="mini">${idx.map(i=>av(S.q[i].n,S.q[i].g,24)).join('')}</div>${CHEV}</button>
     <div class="wb"><div class="wi">`;
    idx.forEach(i=>{const d=ds[i],x=S.q[i],ex=S.x.includes(d),dd=dt(d);
-    h+=`<div class="dr ${d==t?'t':''}" onclick="edit(${i})"><div class="dd"><small>${dd.toLocaleDateString('it-IT',{weekday:'short'})}</small><b>${dd.getDate()}</b></div>${av(x.n,x.g,40)}
-     <div class="dn"><b>${esc(x.n)}</b>${x.g?'<span class="bd o">ospite</span>':''}${ex?'<span class="bd e">extra</span>':''}${S.notes[d]?`<div class="nt">${esc(S.notes[d])}</div>`:''}</div></div>`});
-   h+=`</div></div></section>`});
+    h+=`<div class="dr ${d==t?'t':''} ${d<t?'pa':''}" onclick="edit(${i})"><div class="dd"><small>${dd.toLocaleDateString('it-IT',{weekday:'short'})}</small><b>${dd.getDate()}</b></div>${av(x.n,x.g,40)}
+     <div class="dn"><b>${esc(x.n)}</b>${x.g?'<span class="bd o">ospite</span>':''}${ex?'<span class="bd e">extra</span>':''}${x.s?'<span class="bd t">scambio</span>':''}${S.notes[d]?`<div class="nt">${esc(S.notes[d])}</div>`:''}</div></div>`});
+   return h+`</div></div></section>`};
+  let h=`<div class="hero"><div class="wrap"><div class="hrow"><h1>Turni Auto</h1><button class="pill" onclick="addX()">+ Giorno extra</button></div>
+  ${nx?`<div class="today">${av(nx.n,nx.g,46)}<div><small>${ds[ni]==t?'Oggi guida':'Prossimo turno · '+dt(ds[ni]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})}</small><b>${esc(nx.n)}</b></div></div>`:''}</div></div><div class="wrap">`;
+  if(pk.length){const n=pk.reduce((s,k)=>s+W.get(k).length,0),nn=pk.reduce((s,k)=>s+W.get(k).filter(i=>S.notes[ds[i]]).length,0);
+   h+=`<section class="wk pg ${showPast?'open':''}" id="pg"><button class="wh" onclick="tp()"><div class="wt"><b>Giorni passati</b><small>${n} giorni · ${pk.length} settimane${nn?' · '+nn+(nn==1?' nota':' note'):''}</small></div>${CHEV}</button>
+   <div class="wb"><div class="wi"><div class="pgi">${[...pk].reverse().map(wkHtml).join('')}</div></div></div></section>`}
+  let lm='';
+  mk.forEach(k=>{const mm=dt(ds[W.get(k)[0]]).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+   if(mm!=lm){lm=mm;h+=`<div class="mh">${mm}</div>`}h+=wkHtml(k)});
   a.innerHTML=h+'</div>';const c=$('w_'+ck);if(c&&!window._sc){window._sc=1;setTimeout(()=>c.scrollIntoView({block:'start'}),50)}}
- else if(tab=='s'){const ds=dates(),fut={},nx={};
-  S.q.forEach((x,i)=>{const k=x.g?'Ospiti':x.n;fut[k]=(fut[k]||0)+1;if(!nx[k])nx[k]=dt(ds[i]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})});
-  const keys=[...new Set([...S.names,'Ospiti',...Object.keys(S.tot)])],kf=[...new Set([...S.names,'Ospiti'])];
-  const past=Object.values(S.tot).reduce((s,v)=>s+v,0);
+ else if(tab=='s'){const ds=dates(),t=todayS(),fut={},nx={},hist={...S.tot};let nf=0;
+  S.q.forEach((x,i)=>{const k=x.g?'Ospiti':x.n;
+   if(ds[i]<t){hist[k]=(hist[k]||0)+1;return}
+   nf++;fut[k]=(fut[k]||0)+1;if(!nx[k])nx[k]=dt(ds[i]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})});
+  const keys=[...new Set([...S.names,'Ospiti',...Object.keys(hist)])],kf=[...new Set([...S.names,'Ospiti'])];
+  const past=Object.values(hist).reduce((s,v)=>s+v,0);
   a.innerHTML=`<div class="wrap"><div class="ttl">Statistiche</div>
-  <div class="tiles"><div class="tile"><b>${past}</b><small>Giorni trascorsi</small></div><div class="tile"><b>${S.tot['Ospiti']||0}</b><small>Ospiti nello storico</small></div>
-  <div class="tile"><b>${fut['Ospiti']||0}</b><small>Ospiti in programma</small></div><div class="tile"><b>${S.x.length}</b><small>Giorni extra</small></div></div>
+  <div class="tiles"><div class="tile"><b>${past}</b><small>Giorni trascorsi</small></div><div class="tile"><b>${hist['Ospiti']||0}</b><small>Ospiti nello storico</small></div>
+  <div class="tile"><b>${fut['Ospiti']||0}</b><small>Ospiti in programma</small></div><div class="tile"><b>${S.x.filter(d=>d>=t).length}</b><small>Giorni extra in arrivo</small></div></div>
   <div class="card"><h3>Storico dal ${dt(S.since).toLocaleDateString('it-IT')}</h3>
-  ${past?`<div class="sbox">${donut(S.tot,keys)}<div class="rk">${rank(S.tot,keys)}</div></div>`:'<div class="empty">Ancora nessun dato storico. I giorni passati vengono conteggiati qui man mano che trascorrono.</div>'}</div>
-  <div class="card"><h3>Prossimi ${S.q.length} giorni</h3><div class="sbox">${donut(fut,kf)}<div class="rk">${rank(fut,kf,nx)}</div></div></div></div>`}
+  ${past?`<div class="sbox">${donut(hist,keys)}<div class="rk">${rank(hist,keys)}</div></div>`:'<div class="empty">Ancora nessun dato storico. I giorni passati vengono conteggiati qui man mano che trascorrono.</div>'}</div>
+  <div class="card"><h3>Prossimi ${nf} giorni</h3><div class="sbox">${donut(fut,kf)}<div class="rk">${rank(fut,kf,nx)}</div></div></div></div>`}
  else a.innerHTML=`<div class="wrap"><div class="ttl">Impostazioni</div>
   <div class="card"><h3>Colori dei guidatori</h3>${S.names.map((n,i)=>`<div class="nm"><span class="av" id="sa${i}" style="--s:40px;background:${S.colors[n]}">${esc(ini(n))}</span><b>${esc(n)}</b><label class="sw" id="ss${i}" style="background:${S.colors[n]}"><input type="color" value="${S.colors[n]}" oninput="setCol(${i},this.value)"></label></div>`).join('')}
   <div class="sm">Il nuovo colore compare ovunque dal prossimo cambio di scheda.</div></div>
