@@ -164,7 +164,7 @@ function edit(i){const ds=dates(),d=ds[i],x=S.q[i],ex=S.x.includes(d),past=d<tod
  <textarea id="et" rows="3" placeholder="Note del giorno">${esc(S.notes[d])}</textarea>
  <button class="b" onclick="sv(${i})">Salva (solo questo giorno)</button>
  <button class="b s" onclick="swapUI(${i})">Scambia con un altro giorno</button>
- ${past?'':`<button class="b s" onclick="skipUI(${i})">Salta giro</button>
+ ${past?'':`<button class="b s" onclick="skipUI(${i})">Salta e adegua tutti i giorni futuri</button>
  <button class="b s" onclick="gi(${i})">Inserisci ospite qui (gli altri slittano)</button>
  ${ex?`<button class="b x" onclick="rx(${i})">Rimuovi giorno extra</button>`:''}
  ${x.g&&!ex?`<button class="b x" onclick="dg(${i})">Rimuovi ospite (ricompatta)</button>`:''}`}
@@ -178,19 +178,12 @@ function rx(i){const ds=dates(),d=ds[i];S.x=S.x.filter(z=>z!=d);const x=S.q.spli
  if(i==0&&ds[1])S.base=ds[1];if(!x.g)reflow(i);fill();save();$('dlg').close();render()}
 function skipUI(i){const ds=dates(),d=ds[i],x=S.q[i];
  $('dlg').innerHTML=`<b style="font-size:18px">Salta giro</b>
- <div class="sm" style="margin:6px 0 10px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} tocca a ${esc(x.n)}. Il turno viene saltato e il giro riparte dalla persona dopo. Scrivi una nota (per esempio "${esc(x.n)} assente").</div>
+ <div class="sm" style="margin:6px 0 10px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} tocca a ${esc(x.n)}. Il turno viene saltato e tutti i giorni successivi slittano in avanti. Scrivi una nota (per esempio "${esc(x.n)} assente").</div>
  <textarea id="skn" rows="3" placeholder="Nota (es. ${esc(x.n)} assente)">${esc(S.notes[d])}</textarea>
  <button class="b" onclick="doSkipAll(${i})">Salta e adegua tutti i giorni futuri</button>
- <button class="b s" onclick="doSkipWeek(${i})">Salta e adegua solo questa settimana</button>
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;$('dlg').showModal()}
 function doSkipAll(i){const d=dates()[i],n=$('skn').value.trim();
  S.q[i]={n:'Salta',g:1,sk:1};if(n)S.notes[d]=n;reflow(i+1);fill();save();$('dlg').close();render()}
-function doSkipWeek(i){const ds=dates(),d=ds[i],n=$('skn').value.trim(),k=mon(d);
- S.q[i]={n:'Salta',g:1,sk:1};if(n)S.notes[d]=n;
- const idx=ds.map((v,j)=>j).filter(j=>mon(ds[j])==k);
- const start=idx[0],end=idx[idx.length-1];let p=lastReg(start);
- for(let j=start;j<=end;j++)if(!S.q[j].g){p=(p+1)%S.names.length;S.q[j].n=S.names[p]}
- fill();save();$('dlg').close();render()}
 function addX(){$('dlg').innerHTML=`<b style="font-size:18px">Giorno festivo/weekend lavorato</b>
  <input id="xd" type="date"><input id="xn" list="nl2" placeholder="Chi guida"><datalist id="nl2">${S.names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
  <button class="b" onclick="doX()">Aggiungi</button><button class="b s" onclick="$('dlg').close()">Annulla</button>`;$('dlg').showModal()}
