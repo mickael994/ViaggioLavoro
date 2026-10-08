@@ -1,4 +1,5 @@
-const C='turni-v12';
+const C='turni-v15';
+
 const F=[
   './',
   './index.html',
@@ -9,14 +10,20 @@ const F=[
 ];
 
 self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(C).then(cache=>cache.addAll(F)));
+  event.waitUntil(
+    caches.open(C).then(cache=>cache.addAll(F))
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate',event=>{
   event.waitUntil(
     caches.keys().then(keys=>
-      Promise.all(keys.filter(key=>key!==C).map(key=>caches.delete(key)))
+      Promise.all(
+        keys
+          .filter(key=>key!==C)
+          .map(key=>caches.delete(key))
+      )
     )
   );
   self.clients.claim();

@@ -22,6 +22,10 @@ body{margin:0;font:16px/1.35 -apple-system,"SF Pro Rounded",system-ui,sans-serif
 .today small{display:block;opacity:.88;font-size:12px;text-transform:uppercase;letter-spacing:.6px}.today b{font-size:20px}
 .av{display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--s,40px);height:var(--s,40px);border-radius:50%;color:#fff;font-weight:800;font-size:calc(var(--s,40px)*.45);box-shadow:0 2px 6px rgba(0,0,0,.18)}
 .av.g{border:2px dashed rgba(255,255,255,.9)}
+.app-logo{width:64px;height:64px;border-radius:18px;display:block;flex:none;overflow:hidden;background:linear-gradient(90deg,var(--ac) 0%,var(--ac2) 100%);box-shadow:0 5px 16px rgba(0,0,0,.22)}
+.logo-wrap{position:relative;display:grid;place-items:center}
+.logo-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo-fallback{display:none;width:40px;height:40px;fill:#fff}
 .mh{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:18px 6px 8px}
 .wk{background:var(--card);border-radius:20px;margin-bottom:10px;box-shadow:var(--sh);overflow:hidden;border:2px solid transparent}
 .wk.cur{border-color:var(--ac2)}
@@ -39,7 +43,7 @@ body{margin:0;font:16px/1.35 -apple-system,"SF Pro Rounded",system-ui,sans-serif
 .dd{width:42px;text-align:center;flex:none}.dd small{display:block;color:var(--mut);text-transform:uppercase;font-size:11px;font-weight:800}.dd b{font-size:20px}
 .dn{flex:1;min-width:0}.dn b{font-size:17px}
 .bd{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle;color:#fff}
-.bd.o{background:var(--guest)}.bd.e{background:var(--danger)}.bd.t{background:var(--ac2)}.bd.a{background:#f59e0b}
+.bd.o{background:var(--guest)}.bd.e{background:var(--danger)}.bd.t{background:var(--ac2)}
 .nt{color:var(--mut);font-size:13px;margin-top:3px;overflow-wrap:anywhere;border-left:3px solid var(--ac2);padding-left:8px}
 .card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--sh);margin-bottom:14px}
 .card h3{margin:0 0 10px;font-size:15px}
@@ -76,7 +80,7 @@ dialog{border:0;border-radius:26px 26px 0 0;padding:20px;width:100%;max-width:56
 <dialog id="dlg"></dialog>
 
 <script>
-const KEY='turniAuto3',N=250,KEEP=60;
+const KEY='turniAuto3',N=250,KEEP=60,APP_VERSION='v15';
 const PAL=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6'],GC='#64748b';
 const $=id=>document.getElementById(id);
 
@@ -93,7 +97,15 @@ const ini=n=>((n||'').trim().charAt(0).toUpperCase())||'?';
 
 const CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 const IC={c:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',s:'<path d="M5 20V10M12 20V4M19 20v-7"/>',i:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'};
-const LOGO='<svg width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="rgba(255,255,255,.22)"/><path d="M12 41h40v7H12z" fill="#fff"/><path d="M19 40l7-12h14l7 12" fill="#fff"/><circle cx="23" cy="49" r="5" fill="#17243c"/><circle cx="42" cy="49" r="5" fill="#17243c"/><path d="M5 28h12M7 34h8" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>';
+
+function appLogo(){
+ return `<div class="app-logo logo-wrap">
+  <img src="icon-512.png" alt="Turni Auto" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+  <svg class="logo-fallback" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-label="Turni Auto">
+   <path d="M192 0c-17.7 0-32 14.3-32 32v32h-8.9c-42 0-79.1 27.3-91.6 67.4l-23 73.5C14.5 219.1 0 243.9 0 272v176c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32v-32h320v32c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32V272c0-28.1-14.5-52.9-36.4-67.1l-23-73.5C440.1 91.3 402.9 64 360.9 64H352V32c0-17.7-14.3-32-32-32H192zM151.1 128h209.9c14 0 26.4 9.1 30.5 22.5l13 41.5H107.1l13-41.5c4.2-13.4 16.5-22.5 30.5-22.5zM96 272a32 32 0 1 1 0 64 32 32 0 1 1 0-64zm320 0a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
+  </svg>
+ </div>`;
+}
 
 function ensure(){
  if(!S)return;
@@ -116,10 +128,10 @@ function easter(y){
 
 function isHoliday(d){
  const w=d.getDay();
- if(w==0||w==6)return true;
+ if(w===0||w===6)return true;
  if(['1-1','6-1','25-4','1-5','2-6','15-8','1-11','8-12','25-12','26-12'].includes(d.getDate()+'-'+(d.getMonth()+1)))return true;
  const p=easter(d.getFullYear());p.setDate(p.getDate()+1);
- return iso(p)==iso(d);
+ return iso(p)===iso(d);
 }
 
 function mon(s){
@@ -142,6 +154,7 @@ function activeAbsences(date){
 function calendarDates(){
  const out=[],removed=new Set(S.removed||[]);
  let d=dt(S.start),guard=0;
+
  while(out.length<N+KEEP+80&&guard<5000){
   const id=iso(d);
   const work=!isHoliday(d)||(S.extra||[]).includes(id);
@@ -155,41 +168,38 @@ function calendarDates(){
 function build(){
  if(!S)return [];
  ensure();
- const dates=calendarDates();
- const out=[];
+ const dates=calendarDates(),out=[];
  let pos=0;
 
  for(let i=0;i<dates.length;i++){
   const date=dates[i];
-  const abs=new Set(activeAbsences(date));
+  const absent=new Set(activeAbsences(date));
   const forced=S.overrides[date];
 
   if(forced){
    out.push({...forced});
-   if(!forced.g&&S.names.includes(forced.n)){
-    pos=S.names.indexOf(forced.n);
-   }
+   if(!forced.g&&S.names.includes(forced.n))pos=(S.names.indexOf(forced.n)+1)%S.names.length;
    continue;
   }
 
-  let candidate;
-  let safety=0;
+  let who,safe=0;
   do{
-   candidate=S.names[pos%S.names.length];
+   who=S.names[pos%S.names.length];
    pos=(pos+1)%S.names.length;
-   safety++;
-  }while(abs.has(candidate)&&safety<20);
+   safe++;
+  }while(absent.has(who)&&safe<20);
 
-  out.push({n:candidate,g:0});
+  out.push({n:who,g:0,type:'normal'});
  }
+
  return out;
 }
 
 function prune(){
  if(!S)return;
  ensure();
- const cutDate=new Date();cutDate.setDate(cutDate.getDate()-KEEP);
- const cut=iso(cutDate);
+ const c=new Date();c.setDate(c.getDate()-KEEP);
+ const cut=iso(c);
 
  S.notes=Object.fromEntries(Object.entries(S.notes).filter(([d])=>d>=cut));
  S.extra=S.extra.filter(d=>d>=cut);
@@ -199,15 +209,12 @@ function prune(){
  save();
 }
 
-function display(){
- const ds=calendarDates(),q=build();
- return {ds,q};
-}
+function display(){return {ds:calendarDates(),q:build()};}
 
 function range(a,b){
  const x=dt(a),y=dt(b),mo=d=>d.toLocaleDateString('it-IT',{month:'short'});
- if(a==b)return x.getDate()+' '+mo(x);
- return x.getMonth()==y.getMonth()?`${x.getDate()} – ${y.getDate()} ${mo(y)}`:`${x.getDate()} ${mo(x)} – ${y.getDate()} ${mo(y)}`;
+ if(a===b)return x.getDate()+' '+mo(x);
+ return x.getMonth()===y.getMonth()?`${x.getDate()} – ${y.getDate()} ${mo(y)}`:`${x.getDate()} ${mo(x)} – ${y.getDate()} ${mo(y)}`;
 }
 
 function wnum(k){
@@ -226,7 +233,7 @@ function grab(){
 
 function setN(n){
  grab();setupN=n;
- document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',+b.dataset.n==n));
+ document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
  drawNames();
 }
 
@@ -234,7 +241,7 @@ function drawNames(){
  let h='';
  for(let i=0;i<setupN;i++){
   const c=SV.c[i]||PAL[i];
-  h+=`<div class="nm">${`<span class="av" id="a${i}" style="--s:44px;background:${c}">${esc(ini(SV.n[i]))}</span>`}
+  h+=`<div class="nm"><span class="av" id="a${i}" style="--s:44px;background:${c}">${esc(ini(SV.n[i]))}</span>
   <input id="p${i}" placeholder="Nome guidatore ${i+1}" value="${esc(SV.n[i]||'')}" oninput="upd(${i})" autocapitalize="words" autocomplete="off">
   <label class="sw" id="s${i}" style="background:${c}"><input type="color" id="c${i}" value="${c}" oninput="upd(${i})"></label></div>`;
  }
@@ -273,70 +280,28 @@ function create(){
  if(new Set(names.map(x=>x.toLowerCase())).size<names.length)return alert('I nomi devono essere diversi');
  if(!$('sd').value)return alert('Scegli la data di partenza');
 
- S={
-  names,
-  colors,
-  start:$('sd').value,
-  since:$('sd').value,
-  notes:{},
-  extra:[],
-  removed:[],
-  absences:[],
-  overrides:{},
-  lb:null
- };
-
- prune();
- initOpen=0;
- window._sc=0;
- render();
+ S={names,colors,start:$('sd').value,since:$('sd').value,notes:{},extra:[],removed:[],absences:[],overrides:{},lb:null};
+ prune();initOpen=0;window._sc=0;render();
 }
 
 async function exp(){
- S.lb=todayS();
- save();
-
- const json=JSON.stringify({app:'turni-auto',v:3,data:S});
- const fileName='turni-backup-'+todayS()+'.json';
+ S.lb=todayS();save();
+ const json=JSON.stringify({app:'turni-auto',v:15,data:S});
+ const fn='turni-backup-'+todayS()+'.json';
 
  try{
-  const f=new File([json],fileName,{type:'application/json'});
-  if(navigator.canShare&&navigator.canShare({files:[f]})){
-   await navigator.share({files:[f]});
-   render();
-   return;
-  }
- }catch(e){
-  if(e.name==='AbortError')return;
- }
+  const f=new File([json],fn,{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});render();return}
+ }catch(e){if(e.name==='AbortError')return}
 
  const a=document.createElement('a');
  a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
- a.download=fileName;
- document.body.appendChild(a);
- a.click();
- a.remove();
- render();
+ a.download=fn;
+ document.body.appendChild(a);a.click();a.remove();render();
 }
 
 function migrate(old){
  if(old.start)return old;
-
- const dates=[];
- if(old.base&&Array.isArray(old.q)){
-  let d=dt(old.base);
-  dates.push(iso(d));
-  for(let i=1;i<old.q.length;i++){
-   do{d.setDate(d.getDate()+1)}while(isHoliday(d)&&!(old.x||[]).includes(iso(d)));
-   dates.push(iso(d));
-  }
- }
-
- const overrides={};
- (old.q||[]).forEach((x,i)=>{
-  if(dates[i]&&(x.g||x.s||x.sk))overrides[dates[i]]={n:x.n,g:x.g?1:0};
- });
-
  return {
   names:old.names||[],
   colors:old.colors||{},
@@ -346,478 +311,291 @@ function migrate(old){
   extra:old.x||[],
   removed:[],
   absences:[],
-  overrides,
+  overrides:{},
   lb:old.lb||null
  };
 }
 
 function imp(input){
- const f=input.files[0];
- if(!f)return;
-
+ const f=input.files[0];if(!f)return;
  const rd=new FileReader();
+
  rd.onload=()=>{
   try{
-   const obj=JSON.parse(rd.result);
-   if(obj.app!=='turni-auto'||!obj.data)throw new Error('invalid');
-
+   const o=JSON.parse(rd.result);
+   if(o.app!=='turni-auto'||!o.data)throw 0;
    if(S&&!confirm('Sostituire i dati attuali con quelli del backup?'))return;
-
-   S=migrate(obj.data);
-   ensure();
-   prune();
-   tab='c';
-   initOpen=0;
-   window._sc=0;
-   render();
-   alert('Backup importato');
-  }catch(e){
-   alert('File di backup non valido');
-  }
+   S=migrate(o.data);ensure();prune();tab='c';initOpen=0;window._sc=0;render();alert('Backup importato');
+  }catch(e){alert('File di backup non valido')}
   input.value='';
  };
+
  rd.readAsText(f);
 }
 
-function noteSet(date,value){
- const v=(value||'').trim();
- if(v)S.notes[date]=v;
- else delete S.notes[date];
+function noteSet(d,v){
+ const n=(v||'').trim();
+ if(n)S.notes[d]=n;
+ else delete S.notes[d];
 }
 
 function edit(i){
- const {ds,q}=display();
- const d=ds[i],x=q[i],past=d<todayS(),extra=S.extra.includes(d);
+ const {ds,q}=display(),d=ds[i],x=q[i],past=d<todayS(),extra=S.extra.includes(d);
  const absence=S.absences.find(a=>a.week===mon(d)&&a.name===x.n);
 
  $('dlg').innerHTML=`
  <div class="hrow" style="justify-content:flex-start;gap:12px">
   ${av(x.n,x.g,48)}
-  <div>
-   <b style="font-size:18px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</b>
-   ${extra?'<div class="sm">Giorno extra</div>':''}
-   ${past?'<div class="sm">Giorno passato: puoi correggere dati e note</div>':''}
-  </div>
+  <div><b style="font-size:18px">${dt(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</b>
+  ${extra?'<div class="sm">Giorno extra</div>':''}${past?'<div class="sm">Giorno passato: puoi correggere dati e note</div>':''}</div>
  </div>
-
  <input id="en" list="nl" value="${esc(x.n)}" placeholder="Chi guida">
  <datalist id="nl">${S.names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
  <textarea id="et" rows="3" placeholder="Note del giorno">${esc(S.notes[d])}</textarea>
-
  <button class="b" onclick="modDay(${i})">Modifica (solo questo giorno)</button>
  <button class="b s" onclick="swapUI(${i})">Scambia con un altro giorno</button>
-
  ${past?'':`
-  <button class="b s" onclick="absenceUI(${i})">Guidatore assente questa settimana</button>
-  ${absence?`<button class="b s" onclick="undoAbsence('${esc(absence.id)}')">Annulla assenza di ${esc(absence.name)}</button>`:''}
-  <button class="b s" onclick="guestUI(${i})">Inserisci ospite qui</button>
-  ${x.g&&x.type==='guest'?`<button class="b x" onclick="removeGuest('${d}')">Rimuovi ospite</button>`:''}
-  <button class="b x" onclick="removeDay('${d}')">Rimuovi questo giorno</button>
- `}
-
+ <button class="b s" onclick="absenceUI(${i})">Guidatore assente questa settimana</button>
+ ${absence?`<button class="b s" onclick="undoAbsence('${esc(absence.id)}')">Annulla assenza di ${esc(absence.name)}</button>`:''}
+ <button class="b s" onclick="guestUI(${i})">Inserisci ospite qui</button>
+ ${x.g&&x.type==='guest'?`<button class="b x" onclick="removeGuest('${d}')">Rimuovi ospite</button>`:''}
+ <button class="b x" onclick="removeDay('${d}')">Rimuovi questo giorno</button>`}
  ${extra?`<button class="b x" onclick="removeExtra('${d}')">Rimuovi giorno extra</button>`:''}
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;
-
  $('dlg').showModal();
 }
 
 function modDay(i){
- const {ds}=display();
- const d=ds[i],n=$('en').value.trim();
+ const {ds}=display(),d=ds[i],n=$('en').value.trim();
  if(!n)return alert('Inserisci un nome');
-
  noteSet(d,$('et').value);
  S.overrides[d]={n,g:S.names.includes(n)?0:1,type:S.names.includes(n)?'manual':'guest'};
- save();
- $('dlg').close();
- render();
+ save();$('dlg').close();render();
 }
 
 function swapUI(i){
- const {ds,q}=display();
- const lo=Math.max(0,i-15),hi=Math.min(q.length-1,i+40);
- let options='';
-
+ const {ds,q}=display(),lo=Math.max(0,i-15),hi=Math.min(q.length-1,i+40);
+ let o='';
  for(let j=lo;j<=hi;j++){
   if(j===i)continue;
-  options+=`<option value="${j}"${j===i+1?' selected':''}>${dt(ds[j]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})} · ${esc(q[j].n)}</option>`;
+  o+=`<option value="${j}"${j===i+1?' selected':''}>${dt(ds[j]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})} · ${esc(q[j].n)}</option>`;
  }
 
- $('dlg').innerHTML=`
- <b style="font-size:18px">Scambia turno</b>
- <div class="sm" style="margin:6px 0 10px">I due guidatori selezionati verranno invertiti. Note, giorni extra e resto del calendario non cambiano.</div>
- <select id="swd">${options}</select>
+ $('dlg').innerHTML=`<b style="font-size:18px">Scambia turno</b>
+ <div class="sm" style="margin:6px 0 10px">I due guidatori selezionati vengono invertiti. Il resto del calendario non cambia.</div>
+ <select id="swd">${o}</select>
  <button class="b" onclick="doSwap(${i})">Scambia</button>
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;
-
  $('dlg').showModal();
 }
 
 function doSwap(i){
- const j=+$('swd').value;
- if(Number.isNaN(j)||j===i)return;
-
- const {ds,q}=display();
- const a=q[i],b=q[j];
-
+ const j=+$('swd').value;if(Number.isNaN(j)||j===i)return;
+ const {ds,q}=display(),a=q[i],b=q[j];
  S.overrides[ds[i]]={n:b.n,g:b.g?1:0,type:'swap'};
  S.overrides[ds[j]]={n:a.n,g:a.g?1:0,type:'swap'};
-
- save();
- $('dlg').close();
- render();
+ save();$('dlg').close();render();
 }
 
 function guestUI(i){
- const {ds,q}=display();
- const d=ds[i];
-
- $('dlg').innerHTML=`
- <b style="font-size:18px">Inserisci ospite</b>
- <div class="sm" style="margin:6px 0 10px">L'ospite guiderà in questo giorno. Il calendario dal giorno successivo viene ricalcolato a partire dal guidatore che sarebbe stato previsto dopo il turno sostituito.</div>
+ const {ds}=display(),d=ds[i];
+ $('dlg').innerHTML=`<b style="font-size:18px">Inserisci ospite</b>
+ <div class="sm" style="margin:6px 0 10px">L'ospite guida in questo giorno. Il giro prosegue regolarmente dal turno successivo.</div>
  <input id="gn" placeholder="Nome ospite">
  <textarea id="gt" rows="3" placeholder="Nota opzionale">${esc(S.notes[d])}</textarea>
  <button class="b" onclick="addGuest('${d}')">Inserisci ospite</button>
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;
-
  $('dlg').showModal();
 }
 
-function addGuest(date){
- const name=$('gn').value.trim()||'Ospite';
- noteSet(date,$('gt').value);
- S.overrides[date]={n:name,g:1,type:'guest'};
- save();
- $('dlg').close();
- render();
+function addGuest(d){
+ const n=$('gn').value.trim()||'Ospite';
+ noteSet(d,$('gt').value);
+ S.overrides[d]={n,g:1,type:'guest'};
+ save();$('dlg').close();render();
 }
 
-function removeGuest(date){
- delete S.overrides[date];
- save();
- $('dlg').close();
- render();
+function removeGuest(d){
+ delete S.overrides[d];save();$('dlg').close();render();
 }
 
 function absenceUI(i){
- const {ds,q}=display();
- const d=ds[i],who=q[i].n,week=mon(d);
+ const {ds,q}=display(),d=ds[i],who=q[i].n,w=mon(d);
  if(!S.names.includes(who))return alert('Puoi impostare l’assenza solo per un guidatore del gruppo.');
 
- const first=weekDates(week)[0],last=weekDates(week)[6];
-
- $('dlg').innerHTML=`
- <b style="font-size:18px">Guidatore assente</b>
- <div class="sm" style="margin:6px 0 10px">
-  ${esc(who)} non guiderà in nessun giorno della settimana ${range(first,last)}.
-  I suoi turni vengono rimossi dalla rotazione per quella settimana; gli altri guidatori si compattano e il giro continua dalla persona successiva una volta terminata l'assenza.
- </div>
- <textarea id="an" rows="3" placeholder="Motivo">${esc(S.notes[d]||`${who} assente`)}</textarea>
- <button class="b" onclick="addAbsence('${week}','${esc(who)}')">Conferma assenza</button>
+ const wd=weekDates(w);
+ $('dlg').innerHTML=`<b style="font-size:18px">Guidatore assente</b>
+ <div class="sm" style="margin:6px 0 10px">${esc(who)} non guiderà nella settimana ${range(wd[0],wd[6])}. I turni di ${esc(who)} vengono saltati e gli altri guidatori si compattano; il giro prosegue poi normalmente dalla persona successiva.</div>
+ <textarea id="an" rows="3" placeholder="Motivo">${esc(`${who} assente`)}</textarea>
+ <button class="b" onclick="addAbsence('${w}','${esc(who)}')">Conferma assenza</button>
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;
-
  $('dlg').showModal();
 }
 
-function addAbsence(week,name){
- const note=$('an').value.trim()||`${name} assente`;
- const id=week+'|'+name;
-
+function addAbsence(whoWeek,name){
+ const note=$('an').value.trim()||`${name} assente`,id=whoWeek+'|'+name;
  if(S.absences.some(a=>a.id===id))return alert('Questa assenza è già presente.');
-
- S.absences.push({id,week,name,note});
- save();
- $('dlg').close();
- render();
+ S.absences.push({id,week:whoWeek,name,note});
+ save();$('dlg').close();render();
 }
 
 function undoAbsence(id){
- const a=S.absences.find(x=>x.id===id);
- if(!a)return;
-
- if(!confirm(`Annullare l'assenza di ${a.name}? Il calendario verrà ricalcolato.`))return;
-
+ const a=S.absences.find(x=>x.id===id);if(!a)return;
+ if(!confirm(`Annullare l'assenza di ${a.name}?`))return;
  S.absences=S.absences.filter(x=>x.id!==id);
- save();
- $('dlg').close();
- render();
+ save();$('dlg').close();render();
 }
 
 function addExtra(){
- $('dlg').innerHTML=`
- <b style="font-size:18px">Aggiungi giorno lavorativo</b>
- <div class="sm" style="margin:6px 0 10px">Usalo per un sabato, una domenica o una festività nella quale lavorate. Il giorno entrerà nel giro normale e il calendario successivo si adeguerà.</div>
+ $('dlg').innerHTML=`<b style="font-size:18px">Aggiungi giorno lavorativo</b>
+ <div class="sm" style="margin:6px 0 10px">Aggiunge un sabato, una domenica o una festività nel giro normale.</div>
  <input id="xd" type="date">
  <button class="b" onclick="doExtra()">Aggiungi giorno</button>
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;
-
  $('dlg').showModal();
 }
 
 function doExtra(){
  const d=$('xd').value;
  if(!d)return alert('Scegli una data');
- if(S.extra.includes(d))return alert('Questo giorno è già presente nel calendario');
+ if(S.extra.includes(d))return alert('Questo giorno è già presente');
  if(d<todayS())return alert('Puoi aggiungere solo giorni da oggi in avanti');
-
- S.extra.push(d);
- S.extra.sort();
- save();
- $('dlg').close();
- render();
+ S.extra.push(d);S.extra.sort();save();$('dlg').close();render();
 }
 
-function removeExtra(date){
- if(!confirm('Rimuovere questo giorno extra? Il calendario successivo verrà ricalcolato.'))return;
- S.extra=S.extra.filter(d=>d!==date);
- delete S.overrides[date];
- save();
- $('dlg').close();
- render();
+function removeExtra(d){
+ if(!confirm('Rimuovere questo giorno extra?'))return;
+ S.extra=S.extra.filter(x=>x!==d);delete S.overrides[d];save();$('dlg').close();render();
 }
 
-function removeDay(date){
- if(!confirm('Rimuovere questo giorno? I giorni successivi verranno ricalcolati come se questo giorno non fosse mai esistito.'))return;
- if(!S.removed.includes(date))S.removed.push(date);
- delete S.overrides[date];
- delete S.notes[date];
- save();
- $('dlg').close();
- render();
+function removeDay(d){
+ if(!confirm('Rimuovere questo giorno? I giorni successivi verranno ricalcolati come se non fosse mai esistito.'))return;
+ if(!S.removed.includes(d))S.removed.push(d);
+ delete S.overrides[d];delete S.notes[d];save();$('dlg').close();render();
 }
 
-function show(t){
- tab=t;
- render();
- scrollTo(0,0);
-}
-
-function tw(k){
- openW.has(k)?openW.delete(k):openW.add(k);
- const el=$('w_'+k);
- if(el)el.classList.toggle('open');
-}
-
-function tp(){
- showPast=!showPast;
- $('pg').classList.toggle('open');
-}
+function show(t){tab=t;render();scrollTo(0,0)}
+function tw(k){openW.has(k)?openW.delete(k):openW.add(k);const e=$('w_'+k);if(e)e.classList.toggle('open')}
+function tp(){showPast=!showPast;$('pg').classList.toggle('open')}
 
 function setCol(i,v){
  S.colors[S.names[i]]=v;
  const a=$('sa'+i),s=$('ss'+i);
- if(a)a.style.background=v;
- if(s)s.style.background=v;
+ if(a)a.style.background=v;if(s)s.style.background=v;
  save();
 }
 
 function reset(){
  if(confirm('Cancellare tutto? Prima fai un backup JSON.')){
-  localStorage.removeItem(KEY);
-  S=null;
-  render();
+  localStorage.removeItem(KEY);S=null;render();
  }
 }
 
 function navHtml(){
  return [['c','Calendario'],['s','Statistiche'],['i','Impostazioni']]
- .map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="show('${k}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>${l}</button>`)
- .join('');
+ .map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="show('${k}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>${l}</button>`).join('');
 }
 
 function donut(o,keys){
- const total=keys.reduce((s,k)=>s+(o[k]||0),0);
- if(!total)return '';
-
- let acc=0,segments=[];
- keys.forEach(k=>{
-  const v=o[k]||0;
-  if(!v)return;
-  const start=acc/total*360;
-  acc+=v;
-  segments.push(`${col(k,!S.names.includes(k))} ${start}deg ${acc/total*360}deg`);
- });
-
- return `<div class="donut" style="background:conic-gradient(${segments.join(',')})"><div><b>${total}</b><small>giorni</small></div></div>`;
+ const tot=keys.reduce((s,k)=>s+(o[k]||0),0);if(!tot)return '';
+ let acc=0,seg=[];
+ keys.forEach(k=>{const v=o[k]||0;if(!v)return;const a=acc/tot*360;acc+=v;seg.push(`${col(k,!S.names.includes(k))} ${a}deg ${acc/tot*360}deg`)});
+ return `<div class="donut" style="background:conic-gradient(${seg.join(',')})"><div><b>${tot}</b><small>giorni</small></div></div>`;
 }
 
 function rank(o,keys,next){
- const total=keys.reduce((s,k)=>s+(o[k]||0),0)||1;
- const max=Math.max(1,...keys.map(k=>o[k]||0));
-
+ const tot=keys.reduce((s,k)=>s+(o[k]||0),0)||1,mx=Math.max(1,...keys.map(k=>o[k]||0));
  return [...keys].sort((a,b)=>(o[b]||0)-(o[a]||0)).map(k=>{
-  const guest=!S.names.includes(k),v=o[k]||0;
-  return `<div class="srow">
-   <div class="l">${av(k,guest,34)}<b>${esc(k)}</b><span>${v}</span><em>${Math.round(v/total*100)}%</em></div>
-   <div class="bar"><i style="width:${v/max*100}%;background:${col(k,guest)}"></i></div>
-   ${next&&next[k]?`<div class="nx">Prossimo turno: ${next[k]}</div>`:''}
-  </div>`;
+  const g=!S.names.includes(k),v=o[k]||0;
+  return `<div class="srow"><div class="l">${av(k,g,34)}<b>${esc(k)}</b><span>${v}</span><em>${Math.round(v/tot*100)}%</em></div><div class="bar"><i style="width:${v/mx*100}%;background:${col(k,g)}"></i></div>${next&&next[k]?`<div class="nx">Prossimo turno: ${next[k]}</div>`:''}</div>`;
  }).join('');
 }
 
 function render(){
- const app=$('app');
- $('nav').style.display=S?'flex':'none';
+ const app=$('app');$('nav').style.display=S?'flex':'none';
 
  if(!S){
-  app.innerHTML=`
-  <div class="hero"><div class="wrap"><div class="logo">${LOGO}<div><h1>Turni Auto</h1><div style="opacity:.9">Crea il calendario di chi guida</div></div></div></div></div>
+  app.innerHTML=`<div class="hero"><div class="wrap"><div class="logo">${appLogo()}<div><h1>Turni Auto</h1><div style="opacity:.9">Crea il calendario di chi guida</div></div></div></div></div>
   <div class="wrap">
-   <div class="card"><div class="step"><i>1</i><b>Quanti guidatori?</b></div>
-    <div class="seg">${[2,3,4,5].map(n=>`<button data-n="${n}" class="${n===setupN?'on':''}" onclick="setN(${n})">${n}</button>`).join('')}</div>
-   </div>
-   <div class="card"><div class="step"><i>2</i><b>Nomi e colori</b></div>
-    <div class="sm" style="margin-bottom:6px">Scrivi i nomi nell'ordine di guida.</div><div id="nm"></div>
-    <div class="sm" style="margin-top:14px">Ordine di rotazione</div><div class="ord" id="ord"></div>
-   </div>
-   <div class="card"><div class="step"><i>3</i><b>Da quando parte?</b></div>
-    <input id="sd" type="date" value="${todayS()}"><div class="sm">Se scegli un festivo o un weekend, l'app parte dal primo giorno lavorativo utile.</div>
-   </div>
+   <div class="card"><div class="step"><i>1</i><b>Quanti guidatori?</b></div><div class="seg">${[2,3,4,5].map(n=>`<button data-n="${n}" class="${n===setupN?'on':''}" onclick="setN(${n})">${n}</button>`).join('')}</div></div>
+   <div class="card"><div class="step"><i>2</i><b>Nomi e colori</b></div><div class="sm" style="margin-bottom:6px">Scrivi i nomi nell'ordine di guida.</div><div id="nm"></div><div class="sm" style="margin-top:14px">Ordine di rotazione</div><div class="ord" id="ord"></div></div>
+   <div class="card"><div class="step"><i>3</i><b>Da quando parte?</b></div><input id="sd" type="date" value="${todayS()}"><div class="sm">Se scegli un festivo o un weekend, si parte dal primo giorno lavorativo utile.</div></div>
    <button class="b" onclick="create()" style="font-size:17px;padding:16px">Genera calendario</button>
    <button class="b s" onclick="$('imf').click()">Ho già un backup: importalo</button>
   </div>`;
-  drawNames();
-  return;
+  drawNames();return;
  }
 
- ensure();
- prune();
+ ensure();prune();
  const {ds,q}=display();
  $('nav').innerHTML=navHtml();
 
  if(tab==='c'){
-  const today=todayS(),currentWeek=mon(today),weeks=new Map();
+  const today=todayS(),cw=mon(today),weeks=new Map();
+  ds.forEach((d,i)=>{const k=mon(d);if(!weeks.has(k))weeks.set(k,[]);weeks.get(k).push(i)});
 
-  ds.forEach((d,i)=>{
-   const k=mon(d);
-   if(!weeks.has(k))weeks.set(k,[]);
-   weeks.get(k).push(i);
-  });
+  const keys=[...weeks.keys()],past=keys.filter(k=>k<cw),next=keys.filter(k=>k>=cw);
+  if(!initOpen){openW.add(weeks.has(cw)?cw:next[0]);initOpen=1}
 
-  const wkeys=[...weeks.keys()];
-  const pastWeeks=wkeys.filter(k=>k<currentWeek);
-  const futureWeeks=wkeys.filter(k=>k>=currentWeek);
-
-  if(!initOpen){
-   openW.add(weeks.has(currentWeek)?currentWeek:futureWeeks[0]);
-   initOpen=1;
-  }
-
-  const nowIndex=ds.findIndex(d=>d>=today);
-  const now=nowIndex>=0?q[nowIndex]:null;
+  const ni=ds.findIndex(d=>d>=today),now=ni>=0?q[ni]:null;
 
   const wkHtml=k=>{
-   const idx=weeks.get(k);
-   const first=ds[idx[0]],last=ds[idx[idx.length-1]];
-   const noteCount=idx.filter(i=>S.notes[ds[i]]).length;
-   const abs=S.absences.filter(a=>a.week===k);
+   const idx=weeks.get(k),first=ds[idx[0]],last=ds[idx[idx.length-1]];
+   const nc=idx.filter(i=>S.notes[ds[i]]).length,abs=S.absences.filter(a=>a.week===k);
 
-   let html=`<section class="wk ${openW.has(k)?'open':''} ${k===currentWeek?'cur':''}" id="w_${k}">
-   <button class="wh" onclick="tw('${k}')">
-    <div class="wt">
-     <b>Settimana ${wnum(k)}${k===currentWeek?' <span class="bd t">ORA</span>':''}</b>
-     <small>${range(first,last)}${noteCount?' · '+noteCount+(noteCount===1?' nota':' note'):''}${abs.length?' · '+abs.map(a=>esc(a.name)+' assente').join(', '):''}</small>
-    </div>
-    <div class="mini">${idx.map(i=>av(q[i].n,q[i].g,24)).join('')}</div>${CHEV}
-   </button>
-   <div class="wb"><div class="wi">`;
+   let h=`<section class="wk ${openW.has(k)?'open':''} ${k===cw?'cur':''}" id="w_${k}">
+   <button class="wh" onclick="tw('${k}')"><div class="wt"><b>Settimana ${wnum(k)}${k===cw?' <span class="bd t">ORA</span>':''}</b><small>${range(first,last)}${nc?' · '+nc+(nc===1?' nota':' note'):''}${abs.length?' · '+abs.map(a=>esc(a.name)+' assente').join(', '):''}</small></div><div class="mini">${idx.map(i=>av(q[i].n,q[i].g,24)).join('')}</div>${CHEV}</button><div class="wb"><div class="wi">`;
 
    idx.forEach(i=>{
-    const d=ds[i],x=q[i],dd=dt(d),extra=S.extra.includes(d),abs=S.absences.find(a=>a.week===k&&a.name===x.n);
-    html+=`<div class="dr ${d===today?'t':''} ${d<today?'pa':''}" onclick="edit(${i})">
-     <div class="dd"><small>${dd.toLocaleDateString('it-IT',{weekday:'short'})}</small><b>${dd.getDate()}</b></div>
-     ${av(x.n,x.g,40)}
-     <div class="dn">
-      <b>${esc(x.n)}</b>
-      ${x.g?'<span class="bd o">ospite</span>':''}
-      ${extra?'<span class="bd e">extra</span>':''}
-      ${x.type==='swap'?'<span class="bd t">scambio</span>':''}
-      ${S.notes[d]?`<div class="nt">${esc(S.notes[d])}</div>`:''}
-     </div>
-    </div>`;
+    const d=ds[i],x=q[i],dd=dt(d),extra=S.extra.includes(d);
+    h+=`<div class="dr ${d===today?'t':''} ${d<today?'pa':''}" onclick="edit(${i})"><div class="dd"><small>${dd.toLocaleDateString('it-IT',{weekday:'short'})}</small><b>${dd.getDate()}</b></div>${av(x.n,x.g,40)}<div class="dn"><b>${esc(x.n)}</b>${x.g?'<span class="bd o">ospite</span>':''}${extra?'<span class="bd e">extra</span>':''}${x.type==='swap'?'<span class="bd t">scambio</span>':''}${S.notes[d]?`<div class="nt">${esc(S.notes[d])}</div>`:''}</div></div>`;
    });
 
-   return html+`</div></div></section>`;
+   return h+'</div></div></section>';
   };
 
-  let html=`<div class="hero"><div class="wrap">
-   <div class="hrow"><h1>Turni Auto</h1><button class="pill" onclick="addExtra()">+ Giorno extra</button></div>
-   ${now?`<div class="today">${av(now.n,now.g,46)}<div><small>${ds[nowIndex]===today?'Oggi guida':'Prossimo turno · '+dt(ds[nowIndex]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})}</small><b>${esc(now.n)}</b></div></div>`:''}
-  </div></div><div class="wrap">`;
+  let h=`<div class="hero"><div class="wrap"><div class="hrow"><h1>Turni Auto</h1><button class="pill" onclick="addExtra()">+ Giorno extra</button></div>${now?`<div class="today">${av(now.n,now.g,46)}<div><small>${ds[ni]===today?'Oggi guida':'Prossimo turno · '+dt(ds[ni]).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})}</small><b>${esc(now.n)}</b></div></div>`:''}</div></div><div class="wrap">`;
 
-  if(pastWeeks.length){
-   const number=pastWeeks.reduce((s,k)=>s+weeks.get(k).length,0);
-   html+=`<section class="wk pg ${showPast?'open':''}" id="pg"><button class="wh" onclick="tp()"><div class="wt"><b>Giorni passati</b><small>${number} giorni · ${pastWeeks.length} settimane</small></div>${CHEV}</button><div class="wb"><div class="wi"><div class="pgi">${[...pastWeeks].reverse().map(wkHtml).join('')}</div></div></div></section>`;
+  if(past.length){
+   const n=past.reduce((s,k)=>s+weeks.get(k).length,0);
+   h+=`<section class="wk pg ${showPast?'open':''}" id="pg"><button class="wh" onclick="tp()"><div class="wt"><b>Giorni passati</b><small>${n} giorni · ${past.length} settimane</small></div>${CHEV}</button><div class="wb"><div class="wi"><div class="pgi">${[...past].reverse().map(wkHtml).join('')}</div></div></div></section>`;
   }
 
-  let month='';
-  futureWeeks.forEach(k=>{
+  let mm='';
+  next.forEach(k=>{
    const m=dt(ds[weeks.get(k)[0]]).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-   if(m!==month){month=m;html+=`<div class="mh">${m}</div>`}
-   html+=wkHtml(k);
+   if(m!==mm){mm=m;h+=`<div class="mh">${m}</div>`}
+   h+=wkHtml(k);
   });
 
-  app.innerHTML=html+'</div>';
-
-  const current=$('w_'+currentWeek);
-  if(current&&!window._sc){
-   window._sc=1;
-   setTimeout(()=>current.scrollIntoView({block:'start'}),50);
-  }
+  app.innerHTML=h+'</div>';
+  const cur=$('w_'+cw);
+  if(cur&&!window._sc){window._sc=1;setTimeout(()=>cur.scrollIntoView({block:'start'}),50)}
  }
 
  else if(tab==='s'){
-  const today=todayS(),hist={},fut={},next={};
+  const t=todayS(),hist={},fut={},nx={};
   ds.forEach((d,i)=>{
    const k=q[i].g?'Ospiti':q[i].n;
-   if(d<today)hist[k]=(hist[k]||0)+1;
-   else{
-    fut[k]=(fut[k]||0)+1;
-    if(!next[k])next[k]=dt(d).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
-   }
+   if(d<t)hist[k]=(hist[k]||0)+1;
+   else{fut[k]=(fut[k]||0)+1;if(!nx[k])nx[k]=dt(d).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})}
   });
 
-  const keys=[...new Set([...S.names,'Ospiti',...Object.keys(hist)])];
-  const past=Object.values(hist).reduce((s,v)=>s+v,0);
-  const future=Object.values(fut).reduce((s,v)=>s+v,0);
+  const keys=[...new Set([...S.names,'Ospiti',...Object.keys(hist)])],past=Object.values(hist).reduce((s,v)=>s+v,0),future=Object.values(fut).reduce((s,v)=>s+v,0);
 
-  app.innerHTML=`<div class="wrap"><div class="ttl">Statistiche</div>
-   <div class="tiles">
-    <div class="tile"><b>${past}</b><small>Giorni trascorsi</small></div>
-    <div class="tile"><b>${hist.Ospiti||0}</b><small>Ospiti nello storico</small></div>
-    <div class="tile"><b>${fut.Ospiti||0}</b><small>Ospiti in programma</small></div>
-    <div class="tile"><b>${S.extra.filter(d=>d>=today).length}</b><small>Giorni extra in arrivo</small></div>
-   </div>
-   <div class="card"><h3>Storico dal ${dt(S.since).toLocaleDateString('it-IT')}</h3>
-    ${past?`<div class="sbox">${donut(hist,keys)}<div class="rk">${rank(hist,keys)}</div></div>`:'<div class="empty">Non ci sono ancora giorni trascorsi.</div>'}
-   </div>
-   <div class="card"><h3>Prossimi ${future} giorni</h3>
-    <div class="sbox">${donut(fut,keys)}<div class="rk">${rank(fut,keys,next)}</div></div>
-   </div>
-  </div>`;
+  app.innerHTML=`<div class="wrap"><div class="ttl">Statistiche</div><div class="tiles"><div class="tile"><b>${past}</b><small>Giorni trascorsi</small></div><div class="tile"><b>${hist.Ospiti||0}</b><small>Ospiti nello storico</small></div><div class="tile"><b>${fut.Ospiti||0}</b><small>Ospiti in programma</small></div><div class="tile"><b>${S.extra.filter(d=>d>=t).length}</b><small>Giorni extra in arrivo</small></div></div><div class="card"><h3>Storico dal ${dt(S.since).toLocaleDateString('it-IT')}</h3>${past?`<div class="sbox">${donut(hist,keys)}<div class="rk">${rank(hist,keys)}</div></div>`:'<div class="empty">Non ci sono ancora giorni trascorsi.</div>'}</div><div class="card"><h3>Prossimi ${future} giorni</h3><div class="sbox">${donut(fut,keys)}<div class="rk">${rank(fut,keys,nx)}</div></div></div></div>`;
  }
 
  else{
-  app.innerHTML=`<div class="wrap"><div class="ttl">Impostazioni</div>
-   <div class="card"><h3>Colori dei guidatori</h3>
-    ${S.names.map((n,i)=>`<div class="nm"><span class="av" id="sa${i}" style="--s:40px;background:${S.colors[n]}">${esc(ini(n))}</span><b>${esc(n)}</b><label class="sw" id="ss${i}" style="background:${S.colors[n]}"><input type="color" value="${S.colors[n]}" oninput="setCol(${i},this.value)"></label></div>`).join('')}
-   </div>
-   <div class="card"><h3>Assenze programmate</h3>
-    ${S.absences.length?S.absences.map(a=>`<div class="nm"><span class="av" style="--s:36px;background:${S.colors[a.name]||GC}">${esc(ini(a.name))}</span><div style="flex:1"><b>${esc(a.name)}</b><div class="sm">${range(a.week,weekDates(a.week)[6])}<br>${esc(a.note)}</div></div><button class="b x" style="width:auto;margin:0;padding:9px 12px" onclick="undoAbsence('${esc(a.id)}')">Annulla</button></div>`).join(''):'<div class="sm">Nessuna assenza programmata.</div>'}
-   </div>
-   <div class="card"><h3>Backup</h3><div class="sm">Ultimo backup: ${S.lb?dt(S.lb).toLocaleDateString('it-IT'):'mai'}</div>
-    <button class="b" onclick="exp()">Esporta backup</button>
-    <button class="b s" onclick="$('imf').click()">Importa backup</button>
-   </div>
-   <div class="card"><h3>Zona pericolosa</h3><button class="b x" onclick="reset()">Cancella tutto e ricomincia</button></div>
-  </div>`;
+  app.innerHTML=`<div class="wrap"><div class="ttl">Impostazioni</div><div class="sm" style="margin:-8px 4px 16px">Turni Auto · Versione ${APP_VERSION}</div>
+  <div class="card"><h3>Colori dei guidatori</h3>${S.names.map((n,i)=>`<div class="nm"><span class="av" id="sa${i}" style="--s:40px;background:${S.colors[n]}">${esc(ini(n))}</span><b>${esc(n)}</b><label class="sw" id="ss${i}" style="background:${S.colors[n]}"><input type="color" value="${S.colors[n]}" oninput="setCol(${i},this.value)"></label></div>`).join('')}</div>
+  <div class="card"><h3>Assenze programmate</h3>${S.absences.length?S.absences.map(a=>`<div class="nm"><span class="av" style="--s:36px;background:${S.colors[a.name]||GC}">${esc(ini(a.name))}</span><div style="flex:1"><b>${esc(a.name)}</b><div class="sm">${range(a.week,weekDates(a.week)[6])}<br>${esc(a.note)}</div></div><button class="b x" style="width:auto;margin:0;padding:9px 12px" onclick="undoAbsence('${esc(a.id)}')">Annulla</button></div>`).join(''):'<div class="sm">Nessuna assenza programmata.</div>'}</div>
+  <div class="card"><h3>Backup</h3><div class="sm">Ultimo backup: ${S.lb?dt(S.lb).toLocaleDateString('it-IT'):'mai'}</div><button class="b" onclick="exp()">Esporta backup</button><button class="b s" onclick="$('imf').click()">Importa backup</button></div>
+  <div class="card"><h3>Zona pericolosa</h3><button class="b x" onclick="reset()">Cancella tutto e ricomincia</button></div></div>`;
  }
 }
 
-if(S){
- ensure();
- prune();
-}
+if(S){ensure();prune()}
 render();
 
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
