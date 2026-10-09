@@ -4,7 +4,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Turni Auto">
 <meta name="theme-color" content="#00ffba">
-<link rel="apple-touch-icon" id="appleIcon">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 <link rel="manifest" href="./manifest.json">
 <title>Turni Auto</title>
 <style>
@@ -79,13 +84,19 @@ dialog{border:0;border-radius:26px 26px 0 0;padding:20px;width:100%;max-width:56
 
 <script>
 const BASE=new URL('.',location.href).pathname;
-document.getElementById('appleIcon').href=BASE+'apple-touch-icon.png';
 
-const KEY='turniAuto3',N=250,KEEP=60,APP_VERSION='v16';
+const KEY='turniAuto3',KEEP=60,APP_VERSION='v18';
 const PAL=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6'],GC='#64748b';
 const $=id=>document.getElementById(id);
 
-let S=JSON.parse(localStorage.getItem(KEY)||'null');
+let S=null;
+try{
+ S=JSON.parse(localStorage.getItem(KEY)||'null');
+}catch(e){
+ console.error('Errore lettura dati salvati:',e);
+ S=null;
+}
+
 let tab='c',openW=new Set(),initOpen=0,showPast=false,setupN=4,SV={n:[],c:[]};
 
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
@@ -93,7 +104,7 @@ const pad=n=>String(n).padStart(2,'0');
 const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const dt=s=>new Date(s+'T12:00:00');
 const todayS=()=>iso(new Date());
-const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ini=n=>((n||'').trim().charAt(0).toUpperCase())||'?';
 
 const CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -105,12 +116,15 @@ function appLogo(){
 
 function ensure(){
  if(!S)return;
+ S.names=S.names||[];
  S.colors=S.colors||{};
  S.notes=S.notes||{};
  S.extra=S.extra||[];
  S.absences=S.absences||[];
  S.overrides=S.overrides||{};
  S.removed=S.removed||[];
+ S.since=S.since||S.start||todayS();
+ S.start=S.start||todayS();
  S.names.forEach((n,i)=>{if(!S.colors[n])S.colors[n]=PAL[i%PAL.length]});
 }
 
@@ -147,11 +161,19 @@ function activeAbsences(date){
  return S.absences.filter(a=>a.week===wk).map(a=>a.name);
 }
 
+function futureLimitDate(){
+ const d=new Date();
+ d.setMonth(d.getMonth()+6);
+ d.setDate(d.getDate()+(7-((d.getDay()+6)%7)));
+ return iso(d);
+}
+
 function calendarDates(){
  const out=[],removed=new Set(S.removed||[]);
+ const end=futureLimitDate();
  let d=dt(S.start),guard=0;
 
- while(out.length<N+KEEP+80&&guard<5000){
+ while(iso(d)<=end&&guard<10000){
   const id=iso(d);
   const work=!isHoliday(d)||(S.extra||[]).includes(id);
   if(work&&!removed.has(id))out.push(id);
@@ -161,8 +183,8 @@ function calendarDates(){
  return out;
 }
 
-function build(){
- if(!S)return [];
+function fullBuild(){
+ if(!S||!S.names||!S.names.length)return [];
  ensure();
  const dates=calendarDates(),out=[];
  let pos=0;
@@ -172,9 +194,8 @@ function build(){
   const absent=new Set(activeAbsences(date));
   const forced=S.overrides[date];
 
-  if(forced){
+  if(forced&&forced.g){
    out.push({...forced});
-   if(!forced.g&&S.names.includes(forced.n))pos=(S.names.indexOf(forced.n)+1)%S.names.length;
    continue;
   }
 
@@ -183,9 +204,13 @@ function build(){
    who=S.names[pos%S.names.length];
    pos=(pos+1)%S.names.length;
    safe++;
-  }while(absent.has(who)&&safe<20);
+  }while(absent.has(who)&&safe<S.names.length*3);
 
-  out.push({n:who,g:0,type:'normal'});
+  if(forced){
+   out.push({...forced});
+  }else{
+   out.push({n:who,g:0,type:'normal'});
+  }
  }
 
  return out;
@@ -194,18 +219,24 @@ function build(){
 function prune(){
  if(!S)return;
  ensure();
- const c=new Date();c.setDate(c.getDate()-KEEP);
- const cut=iso(c);
-
- S.notes=Object.fromEntries(Object.entries(S.notes).filter(([d])=>d>=cut));
- S.extra=S.extra.filter(d=>d>=cut);
- S.removed=S.removed.filter(d=>d>=cut);
- S.absences=S.absences.filter(a=>a.week>=mon(cut));
- Object.keys(S.overrides).forEach(d=>{if(d<cut)delete S.overrides[d]});
  save();
 }
 
-function display(){return {ds:calendarDates(),q:build()};}
+function display(){
+ const dates=calendarDates(),qAll=fullBuild();
+ const today=todayS();
+ const pastIdx=[],futureIdx=[];
+ dates.forEach((d,i)=>{
+  if(d<today)pastIdx.push(i);
+  else futureIdx.push(i);
+ });
+ const keepPast=pastIdx.slice(-KEEP);
+ const displayIdx=[...keepPast,...futureIdx];
+ return {
+  ds:displayIdx.map(i=>dates[i]),
+  q:displayIdx.map(i=>qAll[i])
+ };
+}
 
 function range(a,b){
  const x=dt(a),y=dt(b),mo=d=>d.toLocaleDateString('it-IT',{month:'short'});
@@ -282,7 +313,7 @@ function create(){
 
 async function exp(){
  S.lb=todayS();save();
- const json=JSON.stringify({app:'turni-auto',v:16,data:S});
+ const json=JSON.stringify({app:'turni-auto',v:18,data:S});
  const fn='turni-backup-'+todayS()+'.json';
 
  try{
@@ -337,7 +368,8 @@ function noteSet(d,v){
 
 function edit(i){
  const {ds,q}=display(),d=ds[i],x=q[i],past=d<todayS(),extra=S.extra.includes(d);
- const absence=S.absences.find(a=>a.week===mon(d)&&a.name===x.n);
+ const hasOverride=!!S.overrides[d];
+ const weekAbsences=S.absences.filter(a=>a.week===mon(d));
 
  $('dlg').innerHTML=`
  <div class="hrow" style="justify-content:flex-start;gap:12px">
@@ -348,11 +380,12 @@ function edit(i){
  <input id="en" list="nl" value="${esc(x.n)}" placeholder="Chi guida">
  <datalist id="nl">${S.names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
  <textarea id="et" rows="3" placeholder="Note del giorno">${esc(S.notes[d])}</textarea>
- <button class="b" onclick="modDay(${i})">Modifica (solo questo giorno)</button>
+ <button class="b" onclick="saveDay(${i})">Salva modifiche (questo giorno)</button>
+ ${hasOverride?`<button class="b s" onclick="resetDay('${d}')">Ripristina turno automatico (${x.type==='swap'?'annulla scambio':'annulla modifica'})</button>`:''}
  <button class="b s" onclick="swapUI(${i})">Scambia con un altro giorno</button>
  ${past?'':`
- <button class="b s" onclick="absenceUI(${i})">Guidatore assente questa settimana</button>
- ${absence?`<button class="b s" onclick="undoAbsence('${esc(absence.id)}')">Annulla assenza di ${esc(absence.name)}</button>`:''}
+ <button class="b s" onclick="absenceUI(${i})">Imposta assenza questa settimana</button>
+ ${weekAbsences.map(a=>`<button class="b s" data-id="${esc(a.id)}" onclick="undoAbsence(this.dataset.id)">Annulla assenza di ${esc(a.name)}</button>`).join('')}
  <button class="b s" onclick="guestUI(${i})">Inserisci ospite qui</button>
  ${x.g&&x.type==='guest'?`<button class="b x" onclick="removeGuest('${d}')">Rimuovi ospite</button>`:''}
  <button class="b x" onclick="removeDay('${d}')">Rimuovi questo giorno</button>`}
@@ -361,12 +394,18 @@ function edit(i){
  $('dlg').showModal();
 }
 
-function modDay(i){
- const {ds}=display(),d=ds[i],n=$('en').value.trim();
+function saveDay(i){
+ const {ds,q}=display(),d=ds[i],n=$('en').value.trim();
  if(!n)return alert('Inserisci un nome');
  noteSet(d,$('et').value);
- S.overrides[d]={n,g:S.names.includes(n)?0:1,type:S.names.includes(n)?'manual':'guest'};
+ if(n!==q[i].n||S.overrides[d]){
+  S.overrides[d]={n,g:S.names.includes(n)?0:1,type:S.names.includes(n)?'manual':'guest'};
+ }
  save();$('dlg').close();render();
+}
+
+function resetDay(d){
+ delete S.overrides[d];save();$('dlg').close();render();
 }
 
 function swapUI(i){
@@ -416,21 +455,23 @@ function removeGuest(d){
 }
 
 function absenceUI(i){
- const {ds,q}=display(),d=ds[i],who=q[i].n,w=mon(d);
- if(!S.names.includes(who))return alert('Puoi impostare l’assenza solo per un guidatore del gruppo.');
+ const {ds,q}=display(),d=ds[i],w=mon(d),wd=weekDates(w);
+ const currentDriver=S.names.includes(q[i].n)?q[i].n:S.names[0];
+ const opts=S.names.map(n=>`<option value="${esc(n)}"${n===currentDriver?' selected':''}>${esc(n)}</option>`).join('');
 
- const wd=weekDates(w);
  $('dlg').innerHTML=`<b style="font-size:18px">Guidatore assente</b>
- <div class="sm" style="margin:6px 0 10px">${esc(who)} non guiderà nella settimana ${range(wd[0],wd[6])}. I turni di ${esc(who)} vengono saltati e gli altri guidatori si compattano; il giro prosegue poi normalmente dalla persona successiva.</div>
- <textarea id="an" rows="3" placeholder="Motivo">${esc(`${who} assente`)}</textarea>
- <button class="b" onclick="addAbsence('${w}','${esc(who)}')">Conferma assenza</button>
+ <div class="sm" style="margin:6px 0 10px">Seleziona chi non guiderà nella settimana ${range(wd[0],wd[6])}. I suoi turni verranno saltati e gli altri guidatori si compatteranno.</div>
+ <select id="as_who">${opts}</select>
+ <textarea id="an" rows="3" placeholder="Motivo">Assente</textarea>
+ <button class="b" onclick="addAbsence('${w}')">Conferma assenza</button>
  <button class="b s" onclick="$('dlg').close()">Annulla</button>`;
  $('dlg').showModal();
 }
 
-function addAbsence(whoWeek,name){
+function addAbsence(whoWeek){
+ const name=$('as_who').value;
  const note=$('an').value.trim()||`${name} assente`,id=whoWeek+'|'+name;
- if(S.absences.some(a=>a.id===id))return alert('Questa assenza è già presente.');
+ if(S.absences.some(a=>a.id===id))return alert('Questa assenza è già presente per questa settimana.');
  S.absences.push({id,week:whoWeek,name,note});
  save();$('dlg').close();render();
 }
@@ -454,8 +495,9 @@ function addExtra(){
 function doExtra(){
  const d=$('xd').value;
  if(!d)return alert('Scegli una data');
- if(S.extra.includes(d))return alert('Questo giorno è già presente');
+ if(S.extra.includes(d))return alert('Questo giorno è già presente tra i giorni extra');
  if(d<todayS())return alert('Puoi aggiungere solo giorni da oggi in avanti');
+ if(!isHoliday(dt(d)))return alert('Questo giorno è già un normale giorno lavorativo');
  S.extra.push(d);S.extra.sort();save();$('dlg').close();render();
 }
 
@@ -470,7 +512,7 @@ function removeDay(d){
  delete S.overrides[d];delete S.notes[d];save();$('dlg').close();render();
 }
 
-function show(t){tab=t;render();scrollTo(0,0)}
+function show(t){tab=t;render();if(t!=='c')scrollTo(0,0)}
 function tw(k){openW.has(k)?openW.delete(k):openW.add(k);const e=$('w_'+k);if(e)e.classList.toggle('open')}
 function tp(){showPast=!showPast;$('pg').classList.toggle('open')}
 
@@ -554,7 +596,7 @@ function render(){
 
   if(past.length){
    const n=past.reduce((s,k)=>s+weeks.get(k).length,0);
-   h+=`<section class="wk pg ${showPast?'open':''}" id="pg"><button class="wh" onclick="tp()"><div class="wt"><b>Giorni passati</b><small>${n} giorni · ${past.length} settimane</small></div>${CHEV}</button><div class="wb"><div class="wi"><div class="pgi">${[...past].reverse().map(wkHtml).join('')}</div></div></div></section>`;
+   h+=`<section class="wk pg ${showPast?'open':''}" id="pg"><button class="wh" onclick="tp()"><div class="wt"><b>Giorni passati</b><small>${n} giorni · ${past.length} settimane (fino a 60 date)</small></div>${CHEV}</button><div class="wb"><div class="wi"><div class="pgi">${[...past].reverse().map(wkHtml).join('')}</div></div></div></section>`;
   }
 
   let mm='';
@@ -577,15 +619,19 @@ function render(){
    else{fut[k]=(fut[k]||0)+1;if(!nx[k])nx[k]=dt(d).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})}
   });
 
-  const keys=[...new Set([...S.names,'Ospiti',...Object.keys(hist)])],past=Object.values(hist).reduce((s,v)=>s+v,0),future=Object.values(fut).reduce((s,v)=>s+v,0);
+  const hasHistGuests=!!(hist.Ospiti&&hist.Ospiti>0);
+  const hasFutGuests=!!(fut.Ospiti&&fut.Ospiti>0);
+  const histKeys=[...new Set([...S.names,...(hasHistGuests?['Ospiti']:[]),...Object.keys(hist)])];
+  const futKeys=[...new Set([...S.names,...(hasFutGuests?['Ospiti']:[]),...Object.keys(fut)])];
+  const past=Object.values(hist).reduce((s,v)=>s+v,0),future=Object.values(fut).reduce((s,v)=>s+v,0);
 
-  app.innerHTML=`<div class="wrap"><div class="ttl">Statistiche</div><div class="tiles"><div class="tile"><b>${past}</b><small>Giorni trascorsi</small></div><div class="tile"><b>${hist.Ospiti||0}</b><small>Ospiti nello storico</small></div><div class="tile"><b>${fut.Ospiti||0}</b><small>Ospiti in programma</small></div><div class="tile"><b>${S.extra.filter(d=>d>=t).length}</b><small>Giorni extra in arrivo</small></div></div><div class="card"><h3>Storico dal ${dt(S.since).toLocaleDateString('it-IT')}</h3>${past?`<div class="sbox">${donut(hist,keys)}<div class="rk">${rank(hist,keys)}</div></div>`:'<div class="empty">Non ci sono ancora giorni trascorsi.</div>'}</div><div class="card"><h3>Prossimi ${future} giorni</h3><div class="sbox">${donut(fut,keys)}<div class="rk">${rank(fut,keys,nx)}</div></div></div></div>`;
+  app.innerHTML=`<div class="wrap"><div class="ttl">Statistiche</div><div class="tiles"><div class="tile"><b>${past}</b><small>Giorni trascorsi</small></div><div class="tile"><b>${hist.Ospiti||0}</b><small>Ospiti nello storico</small></div><div class="tile"><b>${fut.Ospiti||0}</b><small>Ospiti in programma</small></div><div class="tile"><b>${S.extra.filter(d=>d>=t).length}</b><small>Giorni extra in arrivo</small></div></div><div class="card"><h3>Storico recente (${past} giorni)</h3>${past?`<div class="sbox">${donut(hist,histKeys)}<div class="rk">${rank(hist,histKeys)}</div></div>`:'<div class="empty">Non ci sono ancora giorni trascorsi.</div>'}</div><div class="card"><h3>Prossimi 6 mesi (${future} giorni)</h3><div class="sbox">${donut(fut,futKeys)}<div class="rk">${rank(fut,futKeys,nx)}</div></div></div></div>`;
  }
 
  else{
   app.innerHTML=`<div class="wrap"><div class="ttl">Impostazioni</div><div class="sm" style="margin:-8px 4px 16px">Turni Auto · Versione ${APP_VERSION}</div>
   <div class="card"><h3>Colori dei guidatori</h3>${S.names.map((n,i)=>`<div class="nm"><span class="av" id="sa${i}" style="--s:40px;background:${S.colors[n]}">${esc(ini(n))}</span><b>${esc(n)}</b><label class="sw" id="ss${i}" style="background:${S.colors[n]}"><input type="color" value="${S.colors[n]}" oninput="setCol(${i},this.value)"></label></div>`).join('')}</div>
-  <div class="card"><h3>Assenze programmate</h3>${S.absences.length?S.absences.map(a=>`<div class="nm"><span class="av" style="--s:36px;background:${S.colors[a.name]||GC}">${esc(ini(a.name))}</span><div style="flex:1"><b>${esc(a.name)}</b><div class="sm">${range(a.week,weekDates(a.week)[6])}<br>${esc(a.note)}</div></div><button class="b x" style="width:auto;margin:0;padding:9px 12px" onclick="undoAbsence('${esc(a.id)}')">Annulla</button></div>`).join(''):'<div class="sm">Nessuna assenza programmata.</div>'}</div>
+  <div class="card"><h3>Assenze programmate</h3>${S.absences.length?S.absences.map(a=>`<div class="nm"><span class="av" style="--s:36px;background:${S.colors[a.name]||GC}">${esc(ini(a.name))}</span><div style="flex:1"><b>${esc(a.name)}</b><div class="sm">${range(a.week,weekDates(a.week)[6])}<br>${esc(a.note)}</div></div><button class="b x" style="width:auto;margin:0;padding:9px 12px" data-id="${esc(a.id)}" onclick="undoAbsence(this.dataset.id)">Annulla</button></div>`).join(''):'<div class="sm">Nessuna assenza programmata.</div>'}</div>
   <div class="card"><h3>Backup</h3><div class="sm">Ultimo backup: ${S.lb?dt(S.lb).toLocaleDateString('it-IT'):'mai'}</div><button class="b" onclick="exp()">Esporta backup</button><button class="b s" onclick="$('imf').click()">Importa backup</button></div>
   <div class="card"><h3>Zona pericolosa</h3><button class="b x" onclick="reset()">Cancella tutto e ricomincia</button></div></div>`;
  }
@@ -594,6 +640,7 @@ function render(){
 if(S){ensure();prune()}
 render();
 
+$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close()});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
 </script>

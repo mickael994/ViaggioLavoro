@@ -2,10 +2,16 @@
   "name": "Turni Auto",
   "short_name": "Turni Auto",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f4f7ff",
   "theme_color": "#00ffba",
   "icons": [
+    {
+      "src": "./apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
     {
       "src": "./icon-192.png",
       "sizes": "192x192",

@@ -1,4 +1,4 @@
-const C='turni-v16';
+const C='turni-v18';
 
 const F=[
   './',
@@ -31,17 +31,20 @@ self.addEventListener('activate',event=>{
 
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
+  if(!event.request.url.startsWith('http'))return;
 
   event.respondWith(
     fetch(event.request)
       .then(response=>{
-        const copy=response.clone();
-        caches.open(C).then(cache=>cache.put(event.request,copy));
+        if(response&&response.status===200&&(response.type==='basic'||response.type==='cors')){
+          const copy=response.clone();
+          caches.open(C).then(cache=>cache.put(event.request,copy));
+        }
         return response;
       })
       .catch(()=>
         caches.match(event.request).then(response=>
-          response||caches.match('./index.html')
+          response||caches.match('./index.html')||caches.match('./')
         )
       )
   );
